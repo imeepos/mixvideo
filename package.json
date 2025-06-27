@@ -8,19 +8,26 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspaces && tsc",
     "build:shared": "npm run build --workspace=packages/shared",
     "build:web": "npm run build --workspace=apps/web",
+    "build:video-analyzer": "npm run build --workspace=packages/video-analyzer",
     "dev": "npm run dev --workspaces",
     "dev:shared": "npm run dev --workspace=packages/shared",
     "dev:web": "npm run dev --workspace=apps/web",
-    "type-check": "npm run type-check --workspaces",
-    "clean": "npm run clean --workspaces",
+    "start": "node dist/main.js",
+    "dev:main": "ts-node src/main.ts",
+    "analyze": "npm run build:video-analyzer && npm run dev:main",
+    "type-check": "npm run type-check --workspaces && tsc --noEmit",
+    "clean": "npm run clean --workspaces && rm -rf dist",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "format:lint": "npm run format && npm run lint:fix"
+  },
+  "dependencies": {
+    "@mixvideo/video-analyzer": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.4",
@@ -30,6 +37,7 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.1",
     "prettier": "^3.6.2",
+    "ts-node": "^10.9.1",
     "typescript": "^5.8.3"
   },
   "engines": {
