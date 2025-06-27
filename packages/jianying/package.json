@@ -30,9 +30,7 @@
   ],
   "author": "mixvideo",
   "license": "MIT",
-  "dependencies": {
-    "uuid": "^9.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/uuid": "^9.0.0",

@@ -17,20 +17,20 @@
 import { parse } from '@mixvideo/jianying'
 import { readdir, writeFile } from 'fs/promises';
 import { join } from 'path';
+const root = process.cwd()
 async function main() {
-    const draft = parse(join(__dirname, 'draft_content.json'))
+    const draft = parse(join(root, 'draft_content.json'))
     draft.materials.videos = await Promise.all(draft.materials.videos.map(async video => {
         const material_name = video.material_name
         const videoPath = await getMaterialVideoByName(material_name)
         video.path = videoPath;
         return video;
     }))
-    await writeFile(join(__dirname, 'draft_content.json'), JSON.stringify(draft, null, 2))
+    await writeFile(join(root, 'draft_content.json'), JSON.stringify(draft, null, 2))
 }
 
 async function getMaterialVideoByName(name: string): Promise<string> {
-    const root = join(__dirname, '../../../resources/1001001')
-    const files = await readdir(root)
+    const files = await readdir(join(root, 'videos'))
     return files[Math.floor(Math.random() * files.length)]
 }
 
