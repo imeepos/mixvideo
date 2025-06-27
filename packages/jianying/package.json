@@ -1,0 +1,53 @@
+{
+  "name": "@mixvideo/jianying",
+  "version": "1.0.0",
+  "description": "剪映草稿文件工具包 - 解析、分析和生成剪映项目文件",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "ts-node src/test-parser.ts",
+    "example": "ts-node examples/basic-usage.ts",
+    "parse": "ts-node src/parse-draft.ts",
+    "analyze": "ts-node src/enhanced-parser.ts",
+    "generate": "ts-node src/generate-draft.ts",
+    "demo": "npm run parse && npm run analyze && npm run generate",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "jianying",
+    "capcut",
+    "video",
+    "editing",
+    "parser",
+    "generator",
+    "typescript"
+  ],
+  "author": "mixvideo",
+  "license": "MIT",
+  "dependencies": {
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/uuid": "^9.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mixvideo/mixvideo.git",
+    "directory": "packages/jianying"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

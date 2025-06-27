@@ -1,0 +1,48 @@
+{
+  "duration": 15000000,
+  "fps": 30,
+  "materials": {
+    "videos": [
+      {
+        "id": "video1",
+        "path": "test_video.mp4",
+        "duration": 10000000
+      }
+    ],
+    "audios": [
+      {
+        "id": "audio1", 
+        "path": "background_music.mp3",
+        "duration": 15000000
+      }
+    ]
+  },
+  "tracks": [
+    {
+      "type": "video",
+      "segments": [
+        {
+          "id": "segment1",
+          "material_id": "video1",
+          "target_timerange": {
+            "start": 0,
+            "duration": 10000000
+          }
+        }
+      ]
+    },
+    {
+      "type": "audio", 
+      "segments": [
+        {
+          "id": "segment2",
+          "material_id": "audio1",
+          "target_timerange": {
+            "start": 0,
+            "duration": 15000000
+          }
+        }
+      ]
+    }
+  ]
+}

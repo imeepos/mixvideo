@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <VideoAnalysisReport>
   <Metadata>
-    <GeneratedAt>2025-06-27T07:28:48.097Z</GeneratedAt>
+    <GeneratedAt>2025-06-27T09:02:49.634Z</GeneratedAt>
     <Version>1.0.0</Version>
-    <TotalVideos>0</TotalVideos>
-    <TotalProcessingTime>0</TotalProcessingTime>
+    <TotalVideos>24</TotalVideos>
+    <TotalProcessingTime>289121</TotalProcessingTime>
   </Metadata>
   <Summary>
     <TotalScenes>0</TotalScenes>
@@ -15,7 +15,849 @@
     </RecommendedCategories>
   </Summary>
   <VideoResults>
+    <Video id="1">
+      <FileName>1</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/1.mp4</FilePath>
+      <FileSize>11825150</FileSize>
+      <AnalyzedAt>2025-06-27T08:49:38.372Z</AnalyzedAt>
+      <ProcessingTime>9352</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="2">
+      <FileName>2</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/2.mp4</FilePath>
+      <FileSize>8718523</FileSize>
+      <AnalyzedAt>2025-06-27T08:49:41.138Z</AnalyzedAt>
+      <ProcessingTime>11</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="3">
+      <FileName>3</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/3.mp4</FilePath>
+      <FileSize>10536146</FileSize>
+      <AnalyzedAt>2025-06-27T08:49:42.362Z</AnalyzedAt>
+      <ProcessingTime>17</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="4">
+      <FileName>4</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/4.mp4</FilePath>
+      <FileSize>12438509</FileSize>
+      <AnalyzedAt>2025-06-27T08:49:44.541Z</AnalyzedAt>
+      <ProcessingTime>16</ProcessingTime>
+      <Summary>
+        <Description>```json
+{
+  &quot;products&quot;: [
+    {
+      &quot;name&quot;: &quot;Visor/Sun Hat&quot;,
+      &quot;appearance&quot;: {
+        &quot;color&quot;: &quot;White (main body), possibly dark trim on the edge of the brim&quot;,
+        &quot;shape&quot;: &quot;Curved brim, open top (visor style)&quot;,
+        &quot;size&quot;: &quot;Standard adult head size&quot;,
+        &quot;style&quot;: &quot;Sporty, casual, sun protection&quot;
+      },
+      &quot;material_analysis&quot;: &quot;Likely synthetic fabric (e.g., polyester blend) for the main body and brim covering, with a stiff insert for the brim to maintain shape. The textu</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="5">
+      <FileName>C0013</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C0013.mp4</FilePath>
+      <FileSize>3299291</FileSize>
+      <AnalyzedAt>2025-06-27T08:49:48.089Z</AnalyzedAt>
+      <ProcessingTime>5</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="6">
+      <FileName>C0048</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C0048.mp4</FilePath>
+      <FileSize>17359228</FileSize>
+      <AnalyzedAt>2025-06-27T08:49:49.322Z</AnalyzedAt>
+      <ProcessingTime>22</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="7">
+      <FileName>C0053</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C0053.mp4</FilePath>
+      <FileSize>4239485</FileSize>
+      <AnalyzedAt>2025-06-27T08:49:50.486Z</AnalyzedAt>
+      <ProcessingTime>7</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="8">
+      <FileName>C0054</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C0054.mp4</FilePath>
+      <FileSize>12151650</FileSize>
+      <AnalyzedAt>2025-06-27T08:49:51.701Z</AnalyzedAt>
+      <ProcessingTime>16</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="9">
+      <FileName>C2936</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C2936.mp4</FilePath>
+      <FileSize>3044201</FileSize>
+      <AnalyzedAt>2025-06-27T08:49:52.860Z</AnalyzedAt>
+      <ProcessingTime>5</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="10">
+      <FileName>C2943</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C2943.mp4</FilePath>
+      <FileSize>3978206</FileSize>
+      <AnalyzedAt>2025-06-27T08:49:54.050Z</AnalyzedAt>
+      <ProcessingTime>6</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="11">
+      <FileName>C2996</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C2996.mp4</FilePath>
+      <FileSize>10398882</FileSize>
+      <AnalyzedAt>2025-06-27T08:49:54.484Z</AnalyzedAt>
+      <ProcessingTime>14</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="12">
+      <FileName>C3006</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C3006.mp4</FilePath>
+      <FileSize>9694028</FileSize>
+      <AnalyzedAt>2025-06-27T08:50:22.320Z</AnalyzedAt>
+      <ProcessingTime>26702</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="13">
+      <FileName>C3068</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C3068.mp4</FilePath>
+      <FileSize>5806776</FileSize>
+      <AnalyzedAt>2025-06-27T08:50:23.823Z</AnalyzedAt>
+      <ProcessingTime>10</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="14">
+      <FileName>C3084</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C3084.mp4</FilePath>
+      <FileSize>3529944</FileSize>
+      <AnalyzedAt>2025-06-27T08:50:24.966Z</AnalyzedAt>
+      <ProcessingTime>5</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="15">
+      <FileName>C3092</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C3092.mp4</FilePath>
+      <FileSize>13525577</FileSize>
+      <AnalyzedAt>2025-06-27T08:50:26.179Z</AnalyzedAt>
+      <ProcessingTime>18</ProcessingTime>
+      <Summary>
+        <Description>```json
+{
+  &quot;product_analysis&quot;: {
+    &quot;product_name&quot;: &quot;女士户外运动防晒服套装 (上衣与裤子)&quot;,
+    &quot;products_identified&quot;: [
+      {
+        &quot;type&quot;: &quot;上衣&quot;,
+        &quot;appearance&quot;: {
+          &quot;color&quot;: &quot;淡紫色/薰衣草色&quot;,
+          &quot;shape&quot;: &quot;长袖、短款（露脐设计），全拉链开衫，袖口有指洞设计&quot;,
+          &quot;size&quot;: &quot;合身剪裁，略宽松，提供活动自由度&quot;,
+          &quot;style&quot;: &quot;运动休闲风，轻薄透气&quot;
+        },
+        &quot;material_analysis&quot;: {
+          &quot;identified_materials&quot;: [
+            &quot;合成纤维（如聚酯纤维、氨纶混纺）&quot;
+          ],
+          &quot;reasoning&quot;: &quot;面料垂坠感好，有轻微光泽，适合运动穿着，推测具有吸湿排汗、速干等功能，且常用于防晒服。&quot;
+</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="16">
+      <FileName>C3093</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C3093.mp4</FilePath>
+      <FileSize>15881409</FileSize>
+      <AnalyzedAt>2025-06-27T08:51:00.618Z</AnalyzedAt>
+      <ProcessingTime>33225</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="17">
+      <FileName>C3133</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C3133.mp4</FilePath>
+      <FileSize>15022272</FileSize>
+      <AnalyzedAt>2025-06-27T08:51:35.642Z</AnalyzedAt>
+      <ProcessingTime>33282</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="18">
+      <FileName>C3135</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C3135.mp4</FilePath>
+      <FileSize>4982699</FileSize>
+      <AnalyzedAt>2025-06-27T08:51:55.486Z</AnalyzedAt>
+      <ProcessingTime>15252</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="19">
+      <FileName>C3210</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C3210.mp4</FilePath>
+      <FileSize>9246250</FileSize>
+      <AnalyzedAt>2025-06-27T08:52:33.526Z</AnalyzedAt>
+      <ProcessingTime>28853</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="20">
+      <FileName>C3226</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/主播展示/C3226.mp4</FilePath>
+      <FileSize>5541105</FileSize>
+      <AnalyzedAt>2025-06-27T08:53:00.867Z</AnalyzedAt>
+      <ProcessingTime>21718</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="21">
+      <FileName>C0001</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/拍一发二机制/C0001.MP4</FilePath>
+      <FileSize>92287124</FileSize>
+      <AnalyzedAt>2025-06-27T08:53:51.147Z</AnalyzedAt>
+      <ProcessingTime>32454</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="22">
+      <FileName>C0002</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/拍二发三机制/C0002.MP4</FilePath>
+      <FileSize>109066108</FileSize>
+      <AnalyzedAt>2025-06-27T08:55:00.577Z</AnalyzedAt>
+      <ProcessingTime>33124</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="23">
+      <FileName>C0003</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/拍二发三机制/C0003.MP4</FilePath>
+      <FileSize>83897924</FileSize>
+      <AnalyzedAt>2025-06-27T08:56:11.012Z</AnalyzedAt>
+      <ProcessingTime>24874</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
+    <Video id="24">
+      <FileName>C0004</FileName>
+      <FilePath>/home/imeep/mixvideo/resources/拍二发三机制/C0004.MP4</FilePath>
+      <FileSize>75508136</FileSize>
+      <AnalyzedAt>2025-06-27T08:56:53.348Z</AnalyzedAt>
+      <ProcessingTime>30133</ProcessingTime>
+      <Summary>
+        <Description>Video content analysis completed</Description>
+        <Keywords>
+        </Keywords>
+        <Topics>
+        </Topics>
+      </Summary>
+      <Scenes>
+      </Scenes>
+      <Objects>
+      </Objects>
+      <ProductFeatures>
+        <Appearance>
+          <Colors>
+          </Colors>
+          <Shape></Shape>
+          <Size></Size>
+          <Style></Style>
+        </Appearance>
+        <Materials>
+        </Materials>
+        <Functionality>
+        </Functionality>
+      </ProductFeatures>
+    </Video>
   </VideoResults>
   <FolderMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/1.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/2.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/3.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/4.mp4">
+      <Match id="1">
+        <FolderPath>/home/imeep/mixvideo/resources/主播展示</FolderPath>
+        <FolderName>主播展示</FolderName>
+        <Confidence>0.8</Confidence>
+        <Action>move</Action>
+        <Reasons>
+          <Reason>视频内容描述详细分析了产品的外观、材质、尺寸和风格等特征，这通常是产品展示类视频（如主播带货、产品介绍）的核心内容。</Reason>
+          <Reason>尽管描述中未直接提及&apos;主播&apos;或&apos;展示&apos;行为，但产品细节的丰富程度暗示了其可能在一个展示场景中被呈现，以便观众了解产品。</Reason>
+        </Reasons>
+      </Match>
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C0013.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C0048.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C0053.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C0054.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C2936.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C2943.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C2996.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C3006.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C3068.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C3084.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C3092.mp4">
+      <Match id="1">
+        <FolderPath>/home/imeep/mixvideo/resources/主播展示</FolderPath>
+        <FolderName>主播展示</FolderName>
+        <Confidence>0.95</Confidence>
+        <Action>move</Action>
+        <Reasons>
+          <Reason>视频内容详细描述了产品的外观、款式、材质和功能特点（如长袖、短款、指洞、轻薄透气、吸湿排汗等），这些信息通常需要通过真人展示或特写镜头来呈现。</Reason>
+          <Reason>“女士户外运动防晒服套装”这类服装产品，其穿着效果、面料垂坠感、活动自由度等，最适合通过主播或模特上身展示来体现。</Reason>
+          <Reason>内容描述侧重于产品的物理属性和穿着体验，而非销售策略或促销活动。</Reason>
+        </Reasons>
+      </Match>
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C3093.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C3133.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C3135.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C3210.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/主播展示/C3226.mp4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/拍一发二机制/C0001.MP4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/拍二发三机制/C0002.MP4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/拍二发三机制/C0003.MP4">
+    </VideoMatches>
+    <VideoMatches videoPath="/home/imeep/mixvideo/resources/拍二发三机制/C0004.MP4">
+    </VideoMatches>
   </FolderMatches>
 </VideoAnalysisReport>

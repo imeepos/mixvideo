@@ -1,0 +1,21 @@
+{
+  "name": "jianying-scripts",
+  "version": "1.0.0",
+  "description": "剪映草稿文件管理脚本",
+  "scripts": {
+    "update": "ts-node update-draft-meta.ts",
+    "quick": "ts-node quick-update.ts",
+    "demo": "ts-node demo.ts",
+    "cleanup": "ts-node demo.ts --cleanup",
+    "help": "ts-node update-draft-meta.ts --help"
+  },
+  "dependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/uuid": "^9.0.0"
+  }
+}

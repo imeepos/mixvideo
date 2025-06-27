@@ -1,0 +1,434 @@
+{
+  "canvas_config": {
+    "height": 1920,
+    "ratio": "1080:1920",
+    "width": 1080
+  },
+  "color_space": 0,
+  "config": {
+    "adjust_max_index": 2,
+    "attachment_info": [],
+    "combination_max_index": 1,
+    "export_range": null,
+    "extract_audio_last_index": 1,
+    "lyrics_recognition_id": "",
+    "lyrics_sync": true,
+    "lyrics_taskinfo": [],
+    "maintrack_adsorb": true,
+    "material_save_mode": 0,
+    "multi_language_current": "none",
+    "multi_language_list": [],
+    "multi_language_main": "none",
+    "multi_language_mode": "none",
+    "original_sound_last_index": 2,
+    "record_audio_last_index": 1,
+    "sticker_max_index": 1,
+    "subtitle_keywords_config": null,
+    "subtitle_recognition_id": "",
+    "subtitle_sync": true,
+    "subtitle_taskinfo": [],
+    "system_font_list": [],
+    "text_recognition_id": "",
+    "text_sync": true,
+    "text_taskinfo": [],
+    "video_recognition_id": "",
+    "video_sync": true,
+    "video_taskinfo": []
+  },
+  "create_time": 1751015692588000,
+  "draft_fold_path": "",
+  "draft_id": "4A7BA2EE-6FD6-4036-BA41-7384DD43A9BF",
+  "draft_name": "自动生成的项目",
+  "draft_removable_storage_device": "",
+  "duration": 2000000,
+  "fps": 30,
+  "id": "2D057AD9-3B62-447F-A14F-C39E6125B91A",
+  "last_modified_platform": {
+    "app_id": 3704,
+    "app_source": "auto-generator",
+    "app_version": "1.0.0",
+    "device_id": "auto-generated-1751015692588",
+    "hard_disk_id": "",
+    "mac_address": "",
+    "os_version": "auto",
+    "platform": "auto",
+    "screen_height": 1080,
+    "screen_width": 1920
+  },
+  "materials": {
+    "audio_effects": [],
+    "audio_fades": [],
+    "audio_track_indexes": [],
+    "audios": [
+      {
+        "app_id": 0,
+        "category_id": "",
+        "category_name": "",
+        "check_flag": 1,
+        "copyright_limit_type": "none",
+        "duration": 1000000,
+        "effect_id": "",
+        "formula_id": "",
+        "id": "713D337C-32F4-495B-94EA-423B0EE2F511",
+        "intensifies_path": "",
+        "is_ai_clone_tone": false,
+        "is_text_edit_overdub": false,
+        "is_ugc": false,
+        "local_material_id": "",
+        "music_id": "",
+        "name": "background_music",
+        "path": "/home/imeep/mixvideo/packages/jianying/examples/sample-media/background_music.mp3",
+        "query": "",
+        "request_id": "",
+        "resource_id": "",
+        "search_id": "",
+        "source_from": "",
+        "source_platform": 0,
+        "team_id": "",
+        "text_id": "",
+        "tone_category_id": "",
+        "tone_category_name": "",
+        "tone_effect_id": "",
+        "tone_effect_name": "",
+        "tone_platform": "",
+        "tone_second_category_id": "",
+        "tone_second_category_name": "",
+        "tone_speaker": "",
+        "tone_type": "",
+        "type": "audio",
+        "video_id": "",
+        "wave_points": []
+      },
+      {
+        "app_id": 0,
+        "category_id": "",
+        "category_name": "",
+        "check_flag": 1,
+        "copyright_limit_type": "none",
+        "duration": 1000000,
+        "effect_id": "",
+        "formula_id": "",
+        "id": "B96BD4BC-BECE-4FCF-B49C-0D355344B09B",
+        "intensifies_path": "",
+        "is_ai_clone_tone": false,
+        "is_text_edit_overdub": false,
+        "is_ugc": false,
+        "local_material_id": "",
+        "music_id": "",
+        "name": "voice_over",
+        "path": "/home/imeep/mixvideo/packages/jianying/examples/sample-media/voice_over.wav",
+        "query": "",
+        "request_id": "",
+        "resource_id": "",
+        "search_id": "",
+        "source_from": "",
+        "source_platform": 0,
+        "team_id": "",
+        "text_id": "",
+        "tone_category_id": "",
+        "tone_category_name": "",
+        "tone_effect_id": "",
+        "tone_effect_name": "",
+        "tone_platform": "",
+        "tone_second_category_id": "",
+        "tone_second_category_name": "",
+        "tone_speaker": "",
+        "tone_type": "",
+        "type": "audio",
+        "video_id": "",
+        "wave_points": []
+      }
+    ],
+    "beats": [],
+    "canvases": [],
+    "chromas": [],
+    "color_curves": [],
+    "color_wheels": [],
+    "effects": [],
+    "flowers": [],
+    "handwrites": [],
+    "hsl": [],
+    "images": [],
+    "keyframes": [],
+    "masks": [],
+    "material_animations": [],
+    "placeholders": [],
+    "plugin_effects": [],
+    "shapes": [],
+    "sounds": [],
+    "stickers": [],
+    "texts": [],
+    "videos": [
+      {
+        "aigc_type": "none",
+        "audio_fade": null,
+        "cartoon_path": "",
+        "category_id": "",
+        "category_name": "",
+        "check_flag": 63487,
+        "crop": {
+          "lower_left_x": 0,
+          "lower_left_y": 1,
+          "lower_right_x": 1,
+          "lower_right_y": 1,
+          "upper_left_x": 0,
+          "upper_left_y": 0,
+          "upper_right_x": 1,
+          "upper_right_y": 0
+        },
+        "crop_ratio": "free",
+        "crop_scale": 1,
+        "duration": 1000000,
+        "extra_type_option": 1,
+        "formula_id": "",
+        "freeze": null,
+        "has_audio": true,
+        "height": 1080,
+        "id": "A14B5CE2-3012-4F5B-A0D9-B32220486A61",
+        "intensifies_audio_path": "",
+        "intensifies_path": "",
+        "is_ai_generate_content": false,
+        "is_copyright": false,
+        "is_text_edit_overdub": false,
+        "is_unified_beauty_mode": false,
+        "local_id": "",
+        "local_material_id": "",
+        "material_id": "",
+        "material_name": "intro.mp4",
+        "material_url": "",
+        "matting": {
+          "flag": 0,
+          "has_use_quick_brush": false,
+          "has_use_quick_eraser": false,
+          "interactiveTime": [],
+          "path": "",
+          "strokes": []
+        },
+        "media_path": "",
+        "object_locked": null,
+        "origin_material_id": "",
+        "path": "/home/imeep/mixvideo/packages/jianying/examples/sample-media/intro.mp4",
+        "picture_from": "none",
+        "picture_set_category_id": "",
+        "picture_set_category_name": "",
+        "request_id": "",
+        "reverse_intensifies_path": "",
+        "reverse_path": "",
+        "smart_motion": null,
+        "source": 0,
+        "source_platform": 0,
+        "stable": {
+          "matrix_path": "",
+          "stable_level": 0,
+          "time_range": {
+            "duration": 1000000,
+            "start": 0
+          }
+        },
+        "team_id": "",
+        "type": "video",
+        "video_algorithm": {
+          "algorithms": [],
+          "deflicker": null,
+          "motion_blur_config": null,
+          "noise_reduction": null,
+          "path": "",
+          "time_range": null
+        },
+        "width": 1920
+      },
+      {
+        "aigc_type": "none",
+        "audio_fade": null,
+        "cartoon_path": "",
+        "category_id": "",
+        "category_name": "",
+        "check_flag": 63487,
+        "crop": {
+          "lower_left_x": 0,
+          "lower_left_y": 1,
+          "lower_right_x": 1,
+          "lower_right_y": 1,
+          "upper_left_x": 0,
+          "upper_left_y": 0,
+          "upper_right_x": 1,
+          "upper_right_y": 0
+        },
+        "crop_ratio": "free",
+        "crop_scale": 1,
+        "duration": 1000000,
+        "extra_type_option": 1,
+        "formula_id": "",
+        "freeze": null,
+        "has_audio": true,
+        "height": 1080,
+        "id": "8244FD3D-9232-4D24-9FB1-2BB1E02D331F",
+        "intensifies_audio_path": "",
+        "intensifies_path": "",
+        "is_ai_generate_content": false,
+        "is_copyright": false,
+        "is_text_edit_overdub": false,
+        "is_unified_beauty_mode": false,
+        "local_id": "",
+        "local_material_id": "",
+        "material_id": "",
+        "material_name": "main_content.mov",
+        "material_url": "",
+        "matting": {
+          "flag": 0,
+          "has_use_quick_brush": false,
+          "has_use_quick_eraser": false,
+          "interactiveTime": [],
+          "path": "",
+          "strokes": []
+        },
+        "media_path": "",
+        "object_locked": null,
+        "origin_material_id": "",
+        "path": "/home/imeep/mixvideo/packages/jianying/examples/sample-media/main_content.mov",
+        "picture_from": "none",
+        "picture_set_category_id": "",
+        "picture_set_category_name": "",
+        "request_id": "",
+        "reverse_intensifies_path": "",
+        "reverse_path": "",
+        "smart_motion": null,
+        "source": 0,
+        "source_platform": 0,
+        "stable": {
+          "matrix_path": "",
+          "stable_level": 0,
+          "time_range": {
+            "duration": 1000000,
+            "start": 0
+          }
+        },
+        "team_id": "",
+        "type": "video",
+        "video_algorithm": {
+          "algorithms": [],
+          "deflicker": null,
+          "motion_blur_config": null,
+          "noise_reduction": null,
+          "path": "",
+          "time_range": null
+        },
+        "width": 1920
+      }
+    ]
+  },
+  "mutable_config": null,
+  "name": "自动生成的项目",
+  "new_version": "110.0.0",
+  "platform": {
+    "app_id": 3704,
+    "app_source": "auto-generator",
+    "app_version": "1.0.0",
+    "device_id": "auto-generated-1751015692588",
+    "hard_disk_id": "",
+    "mac_address": "",
+    "os_version": "auto",
+    "platform": "auto",
+    "screen_height": 1080,
+    "screen_width": 1920
+  },
+  "relationships": [],
+  "revert_generate_segment_config": null,
+  "source": "auto-generator",
+  "tracks": [
+    {
+      "attribute": 0,
+      "flag": 0,
+      "id": "0D4FDD00-8004-42E9-ACB9-148433CE6093",
+      "segments": [
+        {
+          "clip": {
+            "alpha": 1,
+            "flip": {
+              "horizontal": false,
+              "vertical": false
+            },
+            "rotation": 0,
+            "scale": {
+              "x": 1,
+              "y": 1
+            },
+            "transform": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "material_id": "A14B5CE2-3012-4F5B-A0D9-B32220486A61",
+          "target_timerange": {
+            "duration": 1000000,
+            "start": 0
+          },
+          "source_timerange": {
+            "duration": 1000000,
+            "start": 0
+          }
+        },
+        {
+          "clip": {
+            "alpha": 1,
+            "flip": {
+              "horizontal": false,
+              "vertical": false
+            },
+            "rotation": 0,
+            "scale": {
+              "x": 1,
+              "y": 1
+            },
+            "transform": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "material_id": "8244FD3D-9232-4D24-9FB1-2BB1E02D331F",
+          "target_timerange": {
+            "duration": 1000000,
+            "start": 1000000
+          },
+          "source_timerange": {
+            "duration": 1000000,
+            "start": 0
+          }
+        }
+      ],
+      "type": "video"
+    },
+    {
+      "attribute": 0,
+      "flag": 0,
+      "id": "9FD2EBBB-29E7-481C-9501-5B3E1E230378",
+      "segments": [
+        {
+          "material_id": "713D337C-32F4-495B-94EA-423B0EE2F511",
+          "target_timerange": {
+            "duration": 1000000,
+            "start": 0
+          },
+          "source_timerange": {
+            "duration": 1000000,
+            "start": 0
+          }
+        },
+        {
+          "material_id": "B96BD4BC-BECE-4FCF-B49C-0D355344B09B",
+          "target_timerange": {
+            "duration": 1000000,
+            "start": 1000000
+          },
+          "source_timerange": {
+            "duration": 1000000,
+            "start": 0
+          }
+        }
+      ],
+      "type": "audio"
+    }
+  ],
+  "update_time": 1751015692588000,
+  "version": "13.2.0"
+}

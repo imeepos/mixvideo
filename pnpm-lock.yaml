@@ -40,6 +40,22 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
+  packages/cli:
+    dependencies:
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.0(tsx@4.20.3)(typescript@5.8.3)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.1
+      tsx:
+        specifier: ^4.0.0
+        version: 4.20.3
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.3
+
   packages/gemini:
     dependencies:
       '@google/genai':
@@ -64,6 +80,25 @@ importers:
       tsx:
         specifier: ^4.0.0
         version: 4.20.3
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.3
+
+  packages/jianying:
+    dependencies:
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.1
+      '@types/uuid':
+        specifier: ^9.0.0
+        version: 9.0.8
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.0(tsx@4.20.3)(typescript@5.8.3)
       typescript:
         specifier: ^5.0.0
         version: 5.8.3
@@ -878,6 +913,9 @@ packages:
 
   '@types/tough-cookie@4.0.5':
     resolution: {integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==}
+
+  '@types/uuid@9.0.8':
+    resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -3463,6 +3501,8 @@ snapshots:
   '@types/stack-utils@2.0.3': {}
 
   '@types/tough-cookie@4.0.5': {}
+
+  '@types/uuid@9.0.8': {}
 
   '@types/yargs-parser@21.0.3': {}
 
