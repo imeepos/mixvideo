@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Video } from '@mixvideo/shared';
 import Header from './components/Header';
 import UploadSection from './components/UploadSection';
+import AudioAnalyzer from './components/AudioAnalyzer';
 import VideoList from './components/VideoList';
 import Timeline from './components/Timeline';
 import PreviewArea from './components/PreviewArea';
@@ -14,6 +15,7 @@ function App() {
   const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [beatPoints, setBeatPoints] = useState<number[]>([]);
 
   const handleFilesSelected = async (files: FileList) => {
     const newVideos: Video[] = [];
@@ -85,6 +87,11 @@ function App() {
     setCurrentVideo(null);
   };
 
+  const handleBeatPointsDetected = (points: number[]) => {
+    setBeatPoints(points);
+    console.log('检测到节拍点:', points);
+  };
+
   return (
     <div className="min-h-screen">
       <div className="container mx-auto max-w-6xl px-4 py-6">
@@ -92,14 +99,19 @@ function App() {
         
         <main className="card animate-fade-in">
           <UploadSection onFilesSelected={handleFilesSelected} />
-          
-          <VideoList 
+
+          <AudioAnalyzer
+            onBeatPointsDetected={handleBeatPointsDetected}
+            onAnalysisComplete={(result) => console.log('分析完成:', result)}
+          />
+
+          <VideoList
             videos={videos}
             onVideoSelect={handleVideoSelect}
             onRemoveVideo={handleRemoveVideo}
           />
-          
-          <Timeline videos={videos} />
+
+          <Timeline videos={videos} beatPoints={beatPoints} />
           
           <PreviewArea currentVideo={currentVideo} />
           
