@@ -1,0 +1,26 @@
+{
+  "draft_id": "draft_template_id",
+  "draft_name": "视频混剪项目",
+  "draft_removable": true,
+  "draft_root_path": "",
+  "draft_timeline_materials_size": 0,
+  "draft_type": 0,
+  "tm_draft_create_time": 0,
+  "tm_draft_modified_time": 0,
+  "create_time": 0,
+  "modify_time": 0,
+  "draft_cover": "",
+  "draft_fold_path": "",
+  "draft_materials_path": "",
+  "draft_version": "5.9.0",
+  "platform": {
+    "app_id": 3704,
+    "app_source": "lv",
+    "app_version": "5.9.0",
+    "device_id": "",
+    "hard_disk_id": "",
+    "mac_address": "",
+    "os": "windows",
+    "os_version": "10.0"
+  }
+}

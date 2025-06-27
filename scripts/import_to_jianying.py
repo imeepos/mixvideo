@@ -1,4 +1,5 @@
 import os
+import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
 import json
@@ -43,7 +44,7 @@ def create_new_project_json(video_paths):
     try:
         # 获取脚本所在目录
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        template_path = os.path.join(current_dir, "jianying", "project", "draft_content.json")
+        template_path = os.path.join(current_dir, "jianying", "draft_content.json")
 
         if not os.path.exists(template_path):
             messagebox.showerror("错误", f"未找到剪映模板文件: {template_path}")
@@ -337,7 +338,6 @@ class JianyingImporterApp:
             pass
 
 if __name__ == "__main__":
-    import sys
     root = tk.Tk()
     app = JianyingImporterApp(root)
-    root.mainloop() 
+    root.mainloop()
