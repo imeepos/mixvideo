@@ -8,6 +8,7 @@ dist/
 build/
 .next/
 out/
+__pycache__
 
 # Environment variables
 .env

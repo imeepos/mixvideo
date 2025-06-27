@@ -1,0 +1,40 @@
+{
+  "name": "@mixvideo/gemini",
+  "version": "1.0.0",
+  "description": "Gemini AI API client library for MixVideo project",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "tsx src/test/index.test.ts"
+  },
+  "keywords": [
+    "gemini",
+    "ai",
+    "google",
+    "vertex-ai",
+    "typescript",
+    "api-client"
+  ],
+  "author": "MixVideo Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
