@@ -327,8 +327,6 @@ export class AnalysisEngine {
 
       if (response.statusCode === 200 && response.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
         const responseText = response.response.candidates[0].content.parts[0].text;
-        console.log('✅ 分析完成，响应内容:', responseText);
-
         const parsedResult = this.parseAnalysisResponse(responseText);
 
         // 保存到缓存
