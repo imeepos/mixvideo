@@ -139,7 +139,7 @@ export class VideoUploader {
         return {
           videoFile,
           success: true,
-          gcsPath: cachedResult.mediaLink || cachedResult.urn,
+          gcsPath: cachedResult.urn,
           uploadTime,
           bytesUploaded: videoFile.size,
           metadata: {
@@ -160,10 +160,6 @@ export class VideoUploader {
       // Read file content
       const fileBuffer = await this.readVideoFile(videoFile);
       const mimeType = this.getMimeType(videoFile.path);
-      console.log({
-        mimeType,
-        videoFile
-      })
       progress.step = 'Uploading to Gemini';
       progress.progress = 20;
       this.config.onProgress(progress);
@@ -184,7 +180,7 @@ export class VideoUploader {
       return {
         videoFile,
         success: true,
-        gcsPath: uploadResult.mediaLink || uploadResult.urn || gcsPath,
+        gcsPath: uploadResult.urn,
         uploadTime,
         bytesUploaded: videoFile.size,
         metadata: {
@@ -541,7 +537,6 @@ export class VideoUploader {
           formData
         );
 
-        console.log('Upload successful:', result);
         // 保存到数据库
         await this.saveToLocalDb(videoFile, result)
         // Return the full upload result

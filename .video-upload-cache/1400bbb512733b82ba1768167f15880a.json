@@ -1,0 +1,33 @@
+{
+  "videoFile": {
+    "path": "/home/imeep/mixvideo/resources/主播展示/C0048.mp4",
+    "name": "C0048",
+    "size": 17359228,
+    "format": "mp4",
+    "createdAt": "2025-06-27T06:06:31.864Z",
+    "modifiedAt": "2025-06-27T06:04:47.292Z"
+  },
+  "result": {
+    "kind": "storage#object",
+    "id": "dy-media-storage/processed/processed2025-06-27T08-14-35-242Z_C0048.mp4/1751012080061575",
+    "selfLink": "https://www.googleapis.com/storage/v1/b/dy-media-storage/o/processed%2Fprocessed2025-06-27T08-14-35-242Z_C0048.mp4",
+    "mediaLink": "https://storage.googleapis.com/download/storage/v1/b/dy-media-storage/o/processed%2Fprocessed2025-06-27T08-14-35-242Z_C0048.mp4?generation=1751012080061575&alt=media",
+    "name": "processed/processed2025-06-27T08-14-35-242Z_C0048.mp4",
+    "bucket": "dy-media-storage",
+    "generation": "1751012080061575",
+    "metageneration": "1",
+    "contentType": "video/mp4",
+    "storageClass": "STANDARD",
+    "size": 17359228,
+    "md5Hash": "zukC8MYBNeg2zOMTKmbOFQ==",
+    "crc32c": "nVNWXg==",
+    "etag": "CIeZnqiUkY4DEAE=",
+    "timeCreated": "2025-06-27T08:14:40.105000Z",
+    "updated": "2025-06-27T08:14:40.105000Z",
+    "timeStorageClassUpdated": "2025-06-27T08:14:40.105000Z",
+    "timeFinalized": "2025-06-27T08:14:40.105000Z",
+    "urn": "gs://dy-media-storage/processed/processed2025-06-27T08-14-35-242Z_C0048.mp4"
+  },
+  "timestamp": 1751012079271,
+  "checksum": "cee902f0c60135e836cce3132a66ce15"
+}
