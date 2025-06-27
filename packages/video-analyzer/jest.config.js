@@ -21,8 +21,8 @@ module.exports = {
     'lcov',
     'html',
   ],
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@mixvideo/gemini$': '<rootDir>/__mocks__/@mixvideo/gemini.js',
   },
 };

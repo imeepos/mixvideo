@@ -1,17 +1,17 @@
 # @mixvideo/video-analyzer
 
-🎬 A powerful TypeScript library for intelligent video analysis using Google's Gemini 2.0 Flash model.
+🎬 Comprehensive video analysis tool for the mixvideo project. Supports folder scanning, video upload, content analysis, and smart categorization using AI models like Gemini and GPT-4.
 
 ## Features
 
-- 🤖 **AI-Powered Analysis**: Leverage Gemini 2.0 Flash for advanced video understanding
-- 🎯 **Scene Detection**: Automatically identify and categorize video scenes
-- 🔍 **Object Recognition**: Detect and track objects throughout the video
-- 📝 **Content Summarization**: Generate comprehensive video summaries
-- ✨ **Highlight Extraction**: Find the most engaging moments in your videos
-- 🔄 **Video Comparison**: Compare similarities between different videos
-- 📊 **Batch Processing**: Analyze multiple videos efficiently
-- 🎨 **TypeScript Support**: Full type safety and excellent developer experience
+- 🎥 **Video Scanning**: Scan folders for video files with support for multiple formats (MP4, MOV, AVI, MKV, WebM, etc.)
+- 🤖 **Gemini Integration**: Upload videos to Gemini AI for intelligent content analysis
+- 🖼️ **GPT-4 Frame Analysis**: Extract and analyze video frames using GPT-4 Vision
+- 🛍️ **Product Analysis**: Specialized e-commerce product feature recognition
+- 📁 **Smart Folder Matching**: AI-powered folder recommendation system with confidence scoring
+- 📊 **Report Generation**: Export analysis results in multiple formats (XML, JSON, CSV, HTML)
+- ⏱️ **Progress Tracking**: Real-time progress callbacks for all operations
+- 🚨 **Error Handling**: Comprehensive error handling with detailed error codes and context
 
 ## Installation
 
@@ -22,19 +22,222 @@ npm install @mixvideo/video-analyzer
 ## Quick Start
 
 ```typescript
-import { VideoAnalyzer } from '@mixvideo/video-analyzer';
+import { VideoAnalyzer, createVideoAnalyzer } from '@mixvideo/video-analyzer';
 
-// Initialize the analyzer
-const analyzer = new VideoAnalyzer({
-  apiKey: 'your-gemini-api-key'
+// Create analyzer instance
+const analyzer = createVideoAnalyzer({
+  upload: {
+    bucketName: 'my-video-bucket',
+    filePrefix: 'analysis/'
+  }
 });
 
-// Analyze a video file
-const result = await analyzer.analyzeVideo(videoFile, {
-  enableSceneDetection: true,
-  enableObjectDetection: true,
-  enableSummarization: true
+// Analyze a directory with Gemini
+const results = await analyzer.analyzeDirectory(
+  '/path/to/videos',
+  { type: 'gemini', model: 'gemini-2.5-flash' },
+  undefined, // scan options
+  { enableProductAnalysis: true }, // analysis options
+  (progress) => console.log(`${progress.step}: ${progress.progress}%`)
+);
+
+console.log('Analysis complete:', results);
+```
+
+## Analysis Modes
+
+### Gemini Mode
+Uses Google's Gemini AI for comprehensive video analysis:
+
+```typescript
+const geminiMode = {
+  type: 'gemini' as const,
+  model: 'gemini-2.5-flash',
+  analysisType: 'comprehensive' // or 'product_focused', 'scene_detection', 'object_detection'
+};
+
+const result = await analyzer.analyzeVideo(videoFile, geminiMode, {
+  enableProductAnalysis: true,
+  maxScenes: 20,
+  confidenceThreshold: 0.7
 });
+```
+
+### GPT-4 Frame Analysis Mode
+Extracts frames and analyzes them with GPT-4 Vision:
+
+```typescript
+const gpt4Mode = {
+  type: 'gpt4' as const,
+  model: 'gpt-4-vision-preview'
+};
+
+const result = await analyzer.analyzeVideo(videoFile, gpt4Mode, {
+  frameSamplingInterval: 1, // Extract frame every 1 second
+  maxFrames: 30
+});
+```
+
+## Complete Workflow
+
+For a full analysis workflow including folder matching and report generation:
+
+```typescript
+const workflowResult = await analyzer.analyzeDirectoryComplete(
+  '/path/to/videos',
+  { type: 'gemini', model: 'gemini-2.5-flash' },
+  {
+    // Scan options
+    scanOptions: {
+      recursive: true,
+      maxDepth: 3
+    },
+
+    // Analysis options
+    analysisOptions: {
+      enableProductAnalysis: true,
+      maxScenes: 15,
+      confidenceThreshold: 0.6
+    },
+
+    // Folder matching configuration
+    folderConfig: {
+      baseDirectory: '/path/to/organize',
+      maxDepth: 2,
+      minConfidence: 0.4,
+      enableSemanticAnalysis: true
+    },
+
+    // Report generation options
+    reportOptions: {
+      format: 'xml',
+      outputPath: '/path/to/report.xml',
+      includeFolderMatching: true,
+      includeDetailedAnalysis: true
+    },
+
+    // Progress tracking
+    onProgress: (progress) => {
+      console.log(`${progress.step}: ${progress.progress}%`);
+    }
+  }
+);
+
+console.log('Workflow complete:');
+console.log('- Analysis results:', workflowResult.analysisResults.length);
+console.log('- Folder matches:', Object.keys(workflowResult.folderMatches).length);
+console.log('- Report saved to:', workflowResult.reportPath);
+```
+
+## API Reference
+
+### VideoAnalyzer Class
+
+#### Constructor
+```typescript
+new VideoAnalyzer(config?: VideoAnalyzerConfig)
+```
+
+#### Methods
+
+##### `scanDirectory(directoryPath: string, options?: VideoScanOptions): Promise<VideoFile[]>`
+Scan a directory for video files.
+
+##### `analyzeVideo(videoFile: VideoFile, mode: AnalysisMode, options?: AnalysisOptions, onProgress?: (progress: AnalysisProgress) => void): Promise<VideoAnalysisResult>`
+Analyze a single video file.
+
+##### `analyzeDirectory(directoryPath: string, mode: AnalysisMode, scanOptions?: VideoScanOptions, analysisOptions?: AnalysisOptions, onProgress?: (progress: AnalysisProgress) => void): Promise<VideoAnalysisResult[]>`
+Analyze all videos in a directory.
+
+##### `findMatchingFolders(analysisResults: VideoAnalysisResult[], folderConfig: FolderMatchConfig): Promise<Record<string, FolderMatchResult[]>>`
+Find matching folders for analysis results.
+
+##### `generateReport(analysisResults: VideoAnalysisResult[], folderMatches: Record<string, FolderMatchResult[]>, reportOptions: ReportOptions): Promise<string>`
+Generate analysis report.
+
+##### `analyzeDirectoryComplete(directoryPath: string, mode: AnalysisMode, options: CompleteWorkflowOptions): Promise<CompleteWorkflowResult>`
+Complete workflow: scan, analyze, match folders, and generate report.
+
+## Configuration
+
+### VideoAnalyzerConfig
+```typescript
+interface VideoAnalyzerConfig {
+  upload?: {
+    bucketName?: string;
+    filePrefix?: string;
+    chunkSize?: number;
+    maxRetries?: number;
+  };
+}
+```
+
+### AnalysisOptions
+```typescript
+interface AnalysisOptions {
+  enableProductAnalysis?: boolean;
+  maxScenes?: number;
+  confidenceThreshold?: number;
+  frameSamplingInterval?: number; // For GPT-4 mode
+  maxFrames?: number; // For GPT-4 mode
+}
+```
+
+### ReportOptions
+```typescript
+interface ReportOptions {
+  format: 'xml' | 'json' | 'csv' | 'html';
+  outputPath: string;
+  includeThumbnails?: boolean;
+  includeDetailedAnalysis?: boolean;
+  includeFolderMatching?: boolean;
+  title?: string;
+  metadata?: Record<string, any>;
+}
+```
+
+## Error Handling
+
+The library provides comprehensive error handling with specific error codes:
+
+```typescript
+try {
+  const result = await analyzer.analyzeVideo(videoFile, mode);
+} catch (error) {
+  if (error instanceof VideoAnalyzerError) {
+    console.error('Analysis failed:', error.code, error.message);
+    console.error('Details:', error.details);
+  }
+}
+```
+
+### Error Codes
+- `SCAN_FAILED`: Directory scanning failed
+- `UPLOAD_FAILED`: Video upload failed
+- `ANALYSIS_FAILED`: Video analysis failed
+- `FOLDER_MATCHING_FAILED`: Folder matching failed
+- `REPORT_GENERATION_FAILED`: Report generation failed
+- `WORKFLOW_FAILED`: Complete workflow failed
+
+## Testing
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 console.log('Analysis Result:', result);
 ```
