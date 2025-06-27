@@ -1,0 +1,39 @@
+{
+  "name": "mixvideo",
+  "version": "1.0.0",
+  "description": "TypeScript Monorepo for MixVideo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:shared": "npm run build --workspace=packages/shared",
+    "build:web": "npm run build --workspace=apps/web",
+    "dev": "npm run dev --workspaces",
+    "dev:shared": "npm run dev --workspace=packages/shared",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "type-check": "npm run type-check --workspaces",
+    "clean": "npm run clean --workspaces",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "format:lint": "npm run format && npm run lint:fix"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.35.0",
+    "@typescript-eslint/parser": "^8.35.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.5.1",
+    "prettier": "^3.6.1",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

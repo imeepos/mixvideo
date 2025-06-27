@@ -1,0 +1,20 @@
+{
+  "name": "@mixvideo/web",
+  "version": "1.0.0",
+  "description": "MixVideo Web Application",
+  "private": true,
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@mixvideo/shared": "file:../../packages/shared"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,58 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.1
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.3
+
+  apps/web:
+    dependencies:
+      '@mixvideo/shared':
+        specifier: file:../../packages/shared
+        version: link:../../packages/shared
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.1
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.3
+
+  packages/shared:
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.3
+
+packages:
+
+  '@types/node@20.19.1':
+    resolution: {integrity: sha512-jJD50LtlD2dodAEO653i3YF04NWak6jN3ky+Ri3Em3mGR39/glWiboM/IePaRbgwSfqM1TpGXfAg8ohn/4dTgA==}
+
+  typescript@5.8.3:
+    resolution: {integrity: sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  undici-types@6.21.0:
+    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
+snapshots:
+
+  '@types/node@20.19.1':
+    dependencies:
+      undici-types: 6.21.0
+
+  typescript@5.8.3: {}
+
+  undici-types@6.21.0: {}
