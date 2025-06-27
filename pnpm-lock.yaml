@@ -42,6 +42,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@mixvideo/jianying':
+        specifier: workspace:*
+        version: link:../jianying
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(tsx@4.20.3)(typescript@5.8.3)
