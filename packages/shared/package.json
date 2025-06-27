@@ -3,22 +3,16 @@
   "version": "1.0.0",
   "description": "Shared utilities and types for MixVideo",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx"
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "tsup": "^8.5.0",
     "typescript": "^5.0.0"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    }
   }
 }

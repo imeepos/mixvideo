@@ -18,23 +18,20 @@ export async function useGeminiAccessToken(): Promise<{ access_token: string, ex
     }).then(res => res.data)
     return token;
 }
-
-export async function uploadFileToGemini(bucket: string, prefix: string, file: Buffer) {
+import FormData from 'form-data'
+export async function uploadFileToGemini(bucket: string, prefix: string, formData: FormData) {
     const genminiAxios = useGeminiAxios()
-    await genminiAxios.request({
+    const result = await genminiAxios.request({
         method: `post`,
-        url: `/google/vertex-ai/upload`,
+        url: `/google/upload`,
         params: {
             bucket: bucket,
             prefix: prefix
         },
-        data: {
-            file: file
-        },
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
+        data: formData,
+        headers: { ...formData.getHeaders(), [`x-google-api-key`]: await useGeminiAccessToken().then(token => token.access_token) }
     })
+    return result.data
 }
 
 export async function useGemini() {

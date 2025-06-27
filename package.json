@@ -15,7 +15,7 @@
     "dev": "npm run dev --workspaces",
     "dev:shared": "npm run dev --workspace=packages/shared",
     "dev:web": "npm run dev --workspace=apps/web",
-    "start": "node dist/main.js",
+    "start": "tsx src/main.ts",
     "dev:main": "ts-node src/main.ts",
     "analyze": "npm run build:video-analyzer && npm run dev:main",
     "type-check": "npm run type-check --workspaces && tsc --noEmit",

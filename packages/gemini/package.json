@@ -2,19 +2,18 @@
   "name": "@mixvideo/gemini",
   "version": "1.0.0",
   "description": "Gemini AI API client library for MixVideo project",
-  "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit",
-    "test": "tsx src/test/index.test.ts"
+    "type-check": "tsc --noEmit"
   },
   "keywords": [
     "gemini",
@@ -27,7 +26,10 @@
   "author": "MixVideo Team",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.0"
+    "@types/mime-types": "^3.0.1",
+    "axios": "^1.6.0",
+    "form-data": "^4.0.0",
+    "mime-types": "^3.0.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -35,6 +37,7 @@
     "typescript": "^5.0.0"
   },
   "peerDependencies": {
+    "tsup": "^8.5.0",
     "typescript": "^5.0.0"
   }
 }

@@ -6,6 +6,8 @@ import * as fs from 'fs';
 import { promisify } from 'util';
 import { uploadFileToGemini } from '@mixvideo/gemini';
 import { VideoFile, UploadProgress, VideoAnalyzerError } from './types';
+import FormData from 'form-data';
+
 
 const readFile = promisify(fs.readFile);
 const stat = promisify(fs.stat);
@@ -35,7 +37,7 @@ export const DEFAULT_UPLOAD_CONFIG: Required<Omit<UploadConfig, 'bucketName' | '
   chunkSize: 10 * 1024 * 1024, // 10MB chunks
   maxRetries: 3,
   timeout: 300000, // 5 minutes
-  onProgress: () => {}
+  onProgress: () => { }
 };
 
 /**
@@ -81,7 +83,7 @@ export class VideoUploader {
   async uploadVideo(videoFile: VideoFile): Promise<UploadResult> {
     const startTime = Date.now();
     const uploadId = this.generateUploadId(videoFile);
-    
+
     const progress: UploadProgress = {
       step: 'Preparing upload',
       progress: 0,
@@ -111,7 +113,7 @@ export class VideoUploader {
       const gcsPath = this.generateGcsPath(videoFile);
 
       // Upload with retry logic
-      await this.uploadWithRetry(fileBuffer, gcsPath, progress);
+      const uploadResult = await this.uploadWithRetry(fileBuffer, videoFile, progress);
 
       const uploadTime = Date.now() - startTime;
 
@@ -123,7 +125,7 @@ export class VideoUploader {
       return {
         videoFile,
         success: true,
-        gcsPath,
+        gcsPath: uploadResult.uri || gcsPath,
         uploadTime,
         bytesUploaded: videoFile.size,
         metadata: {
@@ -135,7 +137,7 @@ export class VideoUploader {
 
     } catch (error) {
       const uploadTime = Date.now() - startTime;
-      
+
       return {
         videoFile,
         success: false,
@@ -159,14 +161,14 @@ export class VideoUploader {
    */
   async uploadVideos(videoFiles: VideoFile[]): Promise<UploadResult[]> {
     const results: UploadResult[] = [];
-    
+
     for (let i = 0; i < videoFiles.length; i++) {
       const videoFile = videoFiles[i];
-      
+
       try {
         const result = await this.uploadVideo(videoFile);
         results.push(result);
-        
+
         // Update overall progress
         const overallProgress = ((i + 1) / videoFiles.length) * 100;
         this.config.onProgress({
@@ -176,7 +178,7 @@ export class VideoUploader {
           bytesUploaded: results.reduce((sum, r) => sum + r.bytesUploaded, 0),
           totalBytes: videoFiles.reduce((sum, f) => sum + f.size, 0)
         });
-        
+
       } catch (error) {
         results.push({
           videoFile,
@@ -243,28 +245,42 @@ export class VideoUploader {
    */
   private async uploadWithRetry(
     fileBuffer: Buffer,
-    gcsPath: string,
+    videoFile: VideoFile,
     progress: UploadProgress
-  ): Promise<void> {
+  ): Promise<{ uri: string; mimeType: string }> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
         progress.step = `Upload attempt ${attempt}/${this.config.maxRetries}`;
         this.config.onProgress(progress);
 
-        await uploadFileToGemini(
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('file', fileBuffer, {
+          filename: videoFile.name,
+          contentType: `video/${videoFile.format}`
+        });
+
+        // Use the uploadFileToGemini function from @mixvideo/gemini
+        const result = await uploadFileToGemini(
           this.config.bucketName,
-          gcsPath,
-          fileBuffer
+          this.config.filePrefix,
+          formData
         );
 
-        // Upload successful
-        return;
+        console.log('Upload successful:', result);
+
+        // Return the upload result
+        return {
+          uri: result.uri || result.url || `gs://${this.config.bucketName}/${this.config.filePrefix}${videoFile.name}`,
+          mimeType: `video/${videoFile.format}`
+        };
 
       } catch (error) {
+        console.log(`Upload attempt ${attempt} failed:`, error);
         lastError = error instanceof Error ? error : new Error(String(error));
-        
+
         if (attempt < this.config.maxRetries) {
           // Wait before retry with exponential backoff
           const delay = Math.pow(2, attempt - 1) * 1000;
@@ -295,7 +311,8 @@ export class VideoUploader {
   private generateUploadId(videoFile: VideoFile): string {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2);
-    return `upload_${timestamp}_${random}`;
+    const sanitizedName = videoFile.name.replace(/[^a-zA-Z0-9]/g, '_');
+    return `upload_${timestamp}_${sanitizedName}_${random}`;
   }
 
   /**

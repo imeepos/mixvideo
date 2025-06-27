@@ -3,16 +3,16 @@
   "version": "1.0.0",
   "description": "Video analysis toolkit using Gemini 2.0 Flash for intelligent video feature extraction",
   "main": "dist/index.js",
-  "module": "dist/index.esm.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "rollup -c",
-    "dev": "rollup -c -w",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist",
-    "prepublishOnly": "npm run clean && npm run build"
+    "test:coverage": "jest --coverage"
   },
   "keywords": [
     "video",
@@ -27,7 +27,8 @@
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "axios": "^1.6.0",
-    "form-data": "^4.0.0"
+    "form-data": "^4.0.0",
+    "tsup": "^8.5.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.0",
