@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VideoAnalysisReport>
+  <Metadata>
+    <GeneratedAt>2025-06-27T07:28:48.097Z</GeneratedAt>
+    <Version>1.0.0</Version>
+    <TotalVideos>0</TotalVideos>
+    <TotalProcessingTime>0</TotalProcessingTime>
+  </Metadata>
+  <Summary>
+    <TotalScenes>0</TotalScenes>
+    <TotalObjects>0</TotalObjects>
+    <CommonThemes>
+    </CommonThemes>
+    <RecommendedCategories>
+    </RecommendedCategories>
+  </Summary>
+  <VideoResults>
+  </VideoResults>
+  <FolderMatches>
+  </FolderMatches>
+</VideoAnalysisReport>

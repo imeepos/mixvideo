@@ -3,14 +3,32 @@
  */
 
 import * as fs from 'fs';
+import * as path from 'path';
 import { promisify } from 'util';
 import { uploadFileToGemini } from '@mixvideo/gemini';
+import type { GeminiUploadResult } from '@mixvideo/gemini'
 import { VideoFile, UploadProgress, VideoAnalyzerError } from './types';
 import FormData from 'form-data';
-
-
+import { extname } from 'path';
+import mime from 'mime-types';
 const readFile = promisify(fs.readFile);
+const writeFile = promisify(fs.writeFile);
 const stat = promisify(fs.stat);
+const access = promisify(fs.access);
+
+/**
+ * Upload cache entry
+ */
+export interface UploadCacheEntry {
+  /** Original video file information */
+  videoFile: VideoFile;
+  /** Upload result from Gemini */
+  result: GeminiUploadResult;
+  /** Timestamp when cached */
+  timestamp: number;
+  /** File checksum for validation */
+  checksum: string;
+}
 
 /**
  * Upload configuration options
@@ -28,6 +46,12 @@ export interface UploadConfig {
   timeout?: number;
   /** Progress callback */
   onProgress?: (progress: UploadProgress) => void;
+  /** Enable local cache to avoid duplicate uploads */
+  enableCache?: boolean;
+  /** Cache directory path */
+  cacheDir?: string;
+  /** Cache expiry time in milliseconds (default: 24 hours) */
+  cacheExpiry?: number;
 }
 
 /**
@@ -37,7 +61,10 @@ export const DEFAULT_UPLOAD_CONFIG: Required<Omit<UploadConfig, 'bucketName' | '
   chunkSize: 10 * 1024 * 1024, // 10MB chunks
   maxRetries: 3,
   timeout: 300000, // 5 minutes
-  onProgress: () => { }
+  onProgress: () => { },
+  enableCache: true,
+  cacheDir: '.video-upload-cache',
+  cacheExpiry: 24 * 60 * 60 * 1000 // 24 hours
 };
 
 /**
@@ -95,6 +122,34 @@ export class VideoUploader {
     this.config.onProgress(progress);
 
     try {
+      // 检查本地缓存
+      progress.step = 'Checking cache';
+      progress.progress = 5;
+      this.config.onProgress(progress);
+
+      const cachedResult = await this.checkLocalCache(videoFile);
+      if (cachedResult) {
+        const uploadTime = Date.now() - startTime;
+
+        progress.step = 'Using cached result';
+        progress.progress = 100;
+        progress.bytesUploaded = videoFile.size;
+        this.config.onProgress(progress);
+
+        return {
+          videoFile,
+          success: true,
+          gcsPath: cachedResult.mediaLink || cachedResult.urn,
+          uploadTime,
+          bytesUploaded: videoFile.size,
+          metadata: {
+            uploadId,
+            timestamp: new Date(),
+            checksum: await this.calculateChecksum(await this.readVideoFile(videoFile))
+          }
+        };
+      }
+
       // Validate file before upload
       await this.validateFileForUpload(videoFile);
 
@@ -104,7 +159,11 @@ export class VideoUploader {
 
       // Read file content
       const fileBuffer = await this.readVideoFile(videoFile);
-
+      const mimeType = this.getMimeType(videoFile.path);
+      console.log({
+        mimeType,
+        videoFile
+      })
       progress.step = 'Uploading to Gemini';
       progress.progress = 20;
       this.config.onProgress(progress);
@@ -113,7 +172,7 @@ export class VideoUploader {
       const gcsPath = this.generateGcsPath(videoFile);
 
       // Upload with retry logic
-      const uploadResult = await this.uploadWithRetry(fileBuffer, videoFile, progress);
+      const uploadResult = await this.uploadWithRetry(fileBuffer, videoFile, progress, mimeType, gcsPath);
 
       const uploadTime = Date.now() - startTime;
 
@@ -125,7 +184,7 @@ export class VideoUploader {
       return {
         videoFile,
         success: true,
-        gcsPath: uploadResult.uri || gcsPath,
+        gcsPath: uploadResult.mediaLink || uploadResult.urn || gcsPath,
         uploadTime,
         bytesUploaded: videoFile.size,
         metadata: {
@@ -239,15 +298,228 @@ export class VideoUploader {
       );
     }
   }
+  private getMimeType(fileName: string) {
+    const extension = extname(fileName).slice(1); // 去掉点号
+    /**
+     * 'video/mp4', 'video/mpeg', 'video/mov', 'video/avi', 'video/x-flv', 'video/mpg',
+                                'video/webm', 'video/wmv', 'video/3gpp'
+     */
+    switch (extension) {
+      case 'mp4':
+        return `video/mp4`
+      default:
+        return mime.lookup(extension) || 'application/octet-stream';
+    }
+  }
+  /**
+   * 将上传结果保存到本地缓存
+   */
+  private async saveToLocalDb(videoFile: VideoFile, result: GeminiUploadResult): Promise<void> {
+    if (!this.config.enableCache) {
+      return;
+    }
 
+    try {
+      // 确保缓存目录存在
+      await this.ensureCacheDir();
+
+      // 计算文件校验和
+      const fileBuffer = await readFile(videoFile.path);
+      const checksum = await this.calculateChecksum(fileBuffer);
+
+      // 创建缓存条目
+      const cacheEntry: UploadCacheEntry = {
+        videoFile,
+        result,
+        timestamp: Date.now(),
+        checksum
+      };
+
+      // 生成缓存文件路径
+      const cacheKey = this.generateCacheKey(videoFile.path);
+      const cacheFilePath = path.join(this.config.cacheDir, `${cacheKey}.json`);
+
+      // 保存到缓存文件
+      await writeFile(cacheFilePath, JSON.stringify(cacheEntry, null, 2), 'utf8');
+
+      console.log(`✅ 缓存已保存: ${videoFile.name} -> ${cacheFilePath}`);
+    } catch (error) {
+      console.warn(`⚠️ 保存缓存失败: ${videoFile.name}`, error);
+      // 缓存失败不应该影响主流程
+    }
+  }
+
+  /**
+   * 从本地缓存检查是否已上传
+   */
+  private async checkLocalCache(videoFile: VideoFile): Promise<GeminiUploadResult | null> {
+    if (!this.config.enableCache) {
+      return null;
+    }
+
+    try {
+      // 生成缓存文件路径
+      const cacheKey = this.generateCacheKey(videoFile.path);
+      const cacheFilePath = path.join(this.config.cacheDir, `${cacheKey}.json`);
+
+      // 检查缓存文件是否存在
+      await access(cacheFilePath, fs.constants.F_OK);
+
+      // 读取缓存内容
+      const cacheContent = await readFile(cacheFilePath, 'utf8');
+      const cacheEntry: UploadCacheEntry = JSON.parse(cacheContent);
+
+      // 检查缓存是否过期
+      const now = Date.now();
+      if (now - cacheEntry.timestamp > this.config.cacheExpiry) {
+        console.log(`⏰ 缓存已过期: ${videoFile.name}`);
+        // 删除过期缓存
+        await fs.promises.unlink(cacheFilePath).catch(() => {});
+        return null;
+      }
+
+      // 验证文件是否发生变化
+      const fileBuffer = await readFile(videoFile.path);
+      const currentChecksum = await this.calculateChecksum(fileBuffer);
+
+      if (currentChecksum !== cacheEntry.checksum) {
+        console.log(`🔄 文件已变更: ${videoFile.name}`);
+        // 删除无效缓存
+        await fs.promises.unlink(cacheFilePath).catch(() => {});
+        return null;
+      }
+
+      console.log(`🎯 使用缓存结果: ${videoFile.name}`);
+      return cacheEntry.result;
+
+    } catch (error) {
+      // 缓存不存在或读取失败
+      return null;
+    }
+  }
+
+  /**
+   * 确保缓存目录存在
+   */
+  private async ensureCacheDir(): Promise<void> {
+    try {
+      await access(this.config.cacheDir, fs.constants.F_OK);
+    } catch {
+      // 目录不存在，创建它
+      await fs.promises.mkdir(this.config.cacheDir, { recursive: true });
+      console.log(`📁 创建缓存目录: ${this.config.cacheDir}`);
+    }
+  }
+
+  /**
+   * 生成缓存键
+   */
+  private generateCacheKey(filePath: string): string {
+    // 使用文件路径的哈希作为缓存键
+    const crypto = require('crypto');
+    return crypto.createHash('md5').update(filePath).digest('hex');
+  }
+
+  /**
+   * 清理过期的缓存文件
+   */
+  async cleanExpiredCache(): Promise<void> {
+    if (!this.config.enableCache) {
+      return;
+    }
+
+    try {
+      await this.ensureCacheDir();
+      const files = await fs.promises.readdir(this.config.cacheDir);
+      const now = Date.now();
+      let cleanedCount = 0;
+
+      for (const file of files) {
+        if (!file.endsWith('.json')) continue;
+
+        const filePath = path.join(this.config.cacheDir, file);
+        try {
+          const content = await readFile(filePath, 'utf8');
+          const cacheEntry: UploadCacheEntry = JSON.parse(content);
+
+          if (now - cacheEntry.timestamp > this.config.cacheExpiry) {
+            await fs.promises.unlink(filePath);
+            cleanedCount++;
+          }
+        } catch (error) {
+          // 删除损坏的缓存文件
+          await fs.promises.unlink(filePath).catch(() => {});
+          cleanedCount++;
+        }
+      }
+
+      if (cleanedCount > 0) {
+        console.log(`🧹 清理了 ${cleanedCount} 个过期缓存文件`);
+      }
+    } catch (error) {
+      console.warn('清理缓存失败:', error);
+    }
+  }
+
+  /**
+   * 获取缓存统计信息
+   */
+  async getCacheStats(): Promise<{
+    totalFiles: number;
+    totalSize: number;
+    oldestEntry: Date | null;
+    newestEntry: Date | null;
+  }> {
+    if (!this.config.enableCache) {
+      return { totalFiles: 0, totalSize: 0, oldestEntry: null, newestEntry: null };
+    }
+
+    try {
+      await this.ensureCacheDir();
+      const files = await fs.promises.readdir(this.config.cacheDir);
+      let totalFiles = 0;
+      let totalSize = 0;
+      let oldestTimestamp = Infinity;
+      let newestTimestamp = 0;
+
+      for (const file of files) {
+        if (!file.endsWith('.json')) continue;
+
+        const filePath = path.join(this.config.cacheDir, file);
+        try {
+          const stats = await stat(filePath);
+          const content = await readFile(filePath, 'utf8');
+          const cacheEntry: UploadCacheEntry = JSON.parse(content);
+
+          totalFiles++;
+          totalSize += stats.size;
+          oldestTimestamp = Math.min(oldestTimestamp, cacheEntry.timestamp);
+          newestTimestamp = Math.max(newestTimestamp, cacheEntry.timestamp);
+        } catch (error) {
+          // 忽略损坏的文件
+        }
+      }
+
+      return {
+        totalFiles,
+        totalSize,
+        oldestEntry: oldestTimestamp === Infinity ? null : new Date(oldestTimestamp),
+        newestEntry: newestTimestamp === 0 ? null : new Date(newestTimestamp)
+      };
+    } catch (error) {
+      return { totalFiles: 0, totalSize: 0, oldestEntry: null, newestEntry: null };
+    }
+  }
   /**
    * Upload with retry logic
    */
   private async uploadWithRetry(
     fileBuffer: Buffer,
     videoFile: VideoFile,
-    progress: UploadProgress
-  ): Promise<{ uri: string; mimeType: string }> {
+    progress: UploadProgress,
+    mimeType: string,
+    gcsPath: string
+  ): Promise<GeminiUploadResult> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
@@ -258,8 +530,8 @@ export class VideoUploader {
         // Create FormData for file upload
         const formData = new FormData();
         formData.append('file', fileBuffer, {
-          filename: videoFile.name,
-          contentType: `video/${videoFile.format}`
+          filename: gcsPath,
+          contentType: mimeType
         });
 
         // Use the uploadFileToGemini function from @mixvideo/gemini
@@ -270,12 +542,10 @@ export class VideoUploader {
         );
 
         console.log('Upload successful:', result);
-
-        // Return the upload result
-        return {
-          uri: result.uri || result.url || `gs://${this.config.bucketName}/${this.config.filePrefix}${videoFile.name}`,
-          mimeType: `video/${videoFile.format}`
-        };
+        // 保存到数据库
+        await this.saveToLocalDb(videoFile, result)
+        // Return the full upload result
+        return result;
 
       } catch (error) {
         console.log(`Upload attempt ${attempt} failed:`, error);

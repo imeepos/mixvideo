@@ -14,8 +14,8 @@ async function main() {
     // 创建视频分析器实例
     const analyzer = createVideoAnalyzer({
       upload: {
-        bucketName: 'mixvideo-analysis',
-        filePrefix: 'processed/',
+        bucketName: 'dy-media-storage',
+        filePrefix: 'processed',
         maxRetries: 3
       }
     });

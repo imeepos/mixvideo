@@ -26,10 +26,10 @@
   "author": "MixVideo Team",
   "license": "MIT",
   "dependencies": {
+    "@google/genai": "^1.7.0",
     "@types/mime-types": "^3.0.1",
     "axios": "^1.6.0",
-    "form-data": "^4.0.0",
-    "mime-types": "^3.0.1"
+    "form-data": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
