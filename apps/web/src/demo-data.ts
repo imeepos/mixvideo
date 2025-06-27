@@ -5,7 +5,7 @@ export function createDemoVideo(name: string, duration: number): Video {
   return {
     id: `demo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     title: name,
-    url: createDemoVideoBlob(duration),
+    url: createDemoVideoBlob(duration, name),
     duration: duration,
     userId: 'demo-user',
     createdAt: new Date(),
@@ -13,7 +13,7 @@ export function createDemoVideo(name: string, duration: number): Video {
 }
 
 // 创建一个演示用的视频 Blob URL
-function createDemoVideoBlob(duration: number): string {
+function createDemoVideoBlob(duration: number, title: string): string {
   // 创建一个简单的 canvas 视频
   const canvas = document.createElement('canvas');
   canvas.width = 640;
@@ -33,12 +33,15 @@ function createDemoVideoBlob(duration: number): string {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = 'white';
-  ctx.font = '48px Arial';
+  ctx.font = '32px Arial';
   ctx.textAlign = 'center';
-  ctx.fillText('演示视频', canvas.width / 2, canvas.height / 2 - 20);
+  ctx.fillText('🎬 演示视频', canvas.width / 2, canvas.height / 2 - 40);
 
   ctx.font = '24px Arial';
-  ctx.fillText(`时长: ${duration}秒`, canvas.width / 2, canvas.height / 2 + 30);
+  ctx.fillText(title, canvas.width / 2, canvas.height / 2);
+
+  ctx.font = '18px Arial';
+  ctx.fillText(`时长: ${duration}秒`, canvas.width / 2, canvas.height / 2 + 40);
 
   // 将 canvas 转换为 blob URL
   return canvas.toDataURL('image/png');
