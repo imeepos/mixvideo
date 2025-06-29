@@ -11,9 +11,9 @@ import {
   FolderMatchResult,
   VideoAnalyzerError
 } from './types';
+import { formatFolderMatchingPrompt } from './simple-prompts';
 
 const readdir = promisify(fs.readdir);
-const stat = promisify(fs.stat);
 
 /**
  * Folder matching configuration
@@ -314,24 +314,7 @@ export class FolderMatcher {
       await this.initializeGeminiClient();
 
       const folderNames = folders.map(f => path.basename(f));
-      const prompt = `请分析以下视频内容描述，并为其推荐最合适的文件夹：
-
-视频内容描述：
-${contentDescription}
-
-可选文件夹：
-${folderNames.map((name, index) => `${index + 1}. ${name}`).join('\n')}
-
-请为每个文件夹评分（0-1），并说明匹配原因。返回JSON格式：
-{
-  "matches": [
-    {
-      "folderName": "文件夹名称",
-      "score": 0.8,
-      "reasons": ["匹配原因1", "匹配原因2"]
-    }
-  ]
-}`;
+      const prompt = formatFolderMatchingPrompt(contentDescription, folderNames);
 
       const response = await this.geminiClient.generateText(
         prompt,

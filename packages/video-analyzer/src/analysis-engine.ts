@@ -64,47 +64,8 @@ export const DEFAULT_ANALYSIS_CACHE_CONFIG: Required<AnalysisCacheConfig> = {
   cacheExpiry: 7 * 24 * 60 * 60 * 1000 // 7 days
 };
 
-/**
- * Analysis prompts for different types of content analysis
- */
-export const ANALYSIS_PROMPTS = {
-  COMPREHENSIVE: `请对这个视频进行全面分析，包括：
-1. 场景检测：识别视频中的不同场景，包括开始时间、结束时间和场景描述
-2. 物体识别：识别视频中出现的主要物体、人物和元素
-3. 内容总结：提供视频的整体描述、关键亮点和主要主题
-4. 情感基调：分析视频的情感氛围和风格
-5. 关键词提取：提取最相关的关键词
-
-请以JSON格式返回结果，包含scenes、objects、summary等字段。`,
-
-  PRODUCT_FOCUSED: `请专门分析这个视频中的产品相关内容：
-1. 产品外观：颜色、形状、尺寸、风格
-2. 材质分析：识别产品使用的材料
-3. 功能特征：产品展示的功能和特性
-4. 使用场景：产品的使用环境和场景
-5. 目标受众：分析产品的目标用户群体
-6. 品牌元素：识别品牌标识、logo等元素
-
-请以JSON格式返回详细的产品分析结果。`,
-
-  SCENE_DETECTION: `请详细分析视频中的场景变化：
-1. 识别每个独立的场景
-2. 标记场景的开始和结束时间
-3. 描述每个场景的内容和特征
-4. 评估场景转换的流畅性
-5. 识别关键帧时间点
-
-请以JSON格式返回场景分析结果。`,
-
-  OBJECT_DETECTION: `请识别和分析视频中的所有重要物体：
-1. 物体名称和类别
-2. 物体在视频中出现的时间范围
-3. 物体的重要性和相关性评分
-4. 物体之间的关系和交互
-5. 物体的属性和特征
-
-请以JSON格式返回物体检测结果。`
-};
+// Import prompts from centralized module
+import { ANALYSIS_PROMPTS } from './simple-prompts';
 
 /**
  * Video analysis engine class
@@ -212,25 +173,10 @@ export class AnalysisEngine {
 
   /**
    * Generate analysis prompts based on options
+   * 简化版本：现在只使用统一的视频分析提示词
    */
   private generateAnalysisPrompts(options: AnalysisOptions): string[] {
-    const prompts: string[] = [];
-
-    if (options.enableSceneDetection) {
-      prompts.push(ANALYSIS_PROMPTS.SCENE_DETECTION);
-    }
-
-    if (options.enableObjectDetection) {
-      prompts.push(ANALYSIS_PROMPTS.OBJECT_DETECTION);
-    }
-
-    if (options.enableProductAnalysis) {
-      prompts.push(ANALYSIS_PROMPTS.PRODUCT_FOCUSED);
-    }
-
-    if (options.enableSummarization || prompts.length === 0) {
-      prompts.push(ANALYSIS_PROMPTS.COMPREHENSIVE);
-    }
+    const prompts: string[] = [ANALYSIS_PROMPTS.COMPREHENSIVE];
 
     // Add custom prompts if provided
     if (options.customPrompts) {

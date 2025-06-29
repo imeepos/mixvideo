@@ -37,7 +37,7 @@ const results = await analyzer.analyzeDirectory(
   '/path/to/videos',
   { type: 'gemini', model: 'gemini-2.5-flash' },
   undefined, // scan options
-  { enableProductAnalysis: true }, // analysis options
+  { quality: 'high' }, // analysis options
   (progress) => console.log(`${progress.step}: ${progress.progress}%`)
 );
 
@@ -57,9 +57,8 @@ const geminiMode = {
 };
 
 const result = await analyzer.analyzeVideo(videoFile, geminiMode, {
-  enableProductAnalysis: true,
-  maxScenes: 20,
-  confidenceThreshold: 0.7
+  quality: 'high',
+  maxFrames: 50
 });
 ```
 
@@ -95,9 +94,8 @@ const workflowResult = await analyzer.analyzeDirectoryComplete(
 
     // Analysis options
     analysisOptions: {
-      enableProductAnalysis: true,
-      maxScenes: 15,
-      confidenceThreshold: 0.6
+      quality: 'high',
+      maxFrames: 30
     },
 
     // Folder matching configuration
@@ -175,11 +173,11 @@ interface VideoAnalyzerConfig {
 ### AnalysisOptions
 ```typescript
 interface AnalysisOptions {
-  enableProductAnalysis?: boolean;
-  maxScenes?: number;
-  confidenceThreshold?: number;
   frameSamplingInterval?: number; // For GPT-4 mode
   maxFrames?: number; // For GPT-4 mode
+  quality?: 'low' | 'medium' | 'high';
+  language?: string;
+  customPrompts?: string[];
 }
 ```
 
@@ -335,7 +333,7 @@ async analyzeBatch(
 import { analyzeVideoQuick } from '@mixvideo/video-analyzer';
 
 const result = await analyzeVideoQuick(videoFile, 'your-api-key', {
-  enableSceneDetection: true
+  quality: 'medium'
 });
 ```
 
@@ -376,14 +374,11 @@ interface VideoAnalysisResult {
 
 ```typescript
 interface AnalysisOptions {
-  enableSceneDetection?: boolean;
-  enableObjectDetection?: boolean;
-  enableSummarization?: boolean;
   frameSamplingInterval?: number;
   maxFrames?: number;
   quality?: 'low' | 'medium' | 'high';
-  customPrompt?: string;
   language?: string;
+  customPrompts?: string[];
 }
 ```
 
@@ -416,9 +411,9 @@ const analyzer = new VideoAnalyzer({
 // Analyze with progress tracking
 const result = await analyzer.analyzeVideo(
   videoFile,
+  { type: 'gemini', model: 'gemini-2.5-flash' },
   {
-    enableSceneDetection: true,
-    enableObjectDetection: true,
+    quality: 'high',
     frameSamplingInterval: 1,
     maxFrames: 50
   },

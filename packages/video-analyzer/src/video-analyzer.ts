@@ -143,8 +143,8 @@ export class VideoAnalyzer {
         throw new Error(`Unsupported analysis mode: ${mode.type}`);
       }
 
-      // Add product analysis if enabled
-      if (options.enableProductAnalysis && mode.type === 'gemini') {
+      // Add product analysis for Gemini mode (always enabled now since we use unified prompts)
+      if (mode.type === 'gemini') {
         progress.step = 'Analyzing product features';
         progress.progress = 80;
         onProgress?.(progress);

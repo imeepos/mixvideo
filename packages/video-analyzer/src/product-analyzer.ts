@@ -10,64 +10,8 @@ import {
   VideoAnalyzerError
 } from './types';
 
-/**
- * Product analysis prompts for different aspects
- */
-export const PRODUCT_ANALYSIS_PROMPTS = {
-  APPEARANCE: `请详细分析视频中产品的外观特征：
-1. 颜色：主要颜色、配色方案、颜色搭配
-2. 形状：整体形状、设计风格、几何特征
-3. 尺寸：相对大小、比例关系
-4. 风格：设计风格（现代、经典、简约等）
-5. 表面处理：光泽度、纹理、图案
-
-请以JSON格式返回详细的外观分析结果。`,
-
-  MATERIALS: `请分析视频中产品使用的材料：
-1. 主要材料：金属、塑料、布料、皮革、玻璃等
-2. 材料质感：光滑、粗糙、柔软、坚硬等
-3. 材料质量：高端、中端、经济型
-4. 特殊材料：环保材料、高科技材料等
-5. 材料组合：多种材料的搭配使用
-
-请以JSON格式返回材料分析结果。`,
-
-  FUNCTIONALITY: `请分析产品展示的功能特征：
-1. 主要功能：产品的核心功能和用途
-2. 特色功能：独特的功能特点
-3. 操作方式：如何使用和操作
-4. 技术特征：涉及的技术和创新点
-5. 性能表现：速度、效率、精度等
-
-请以JSON格式返回功能分析结果。`,
-
-  USAGE_SCENARIOS: `请分析产品的使用场景和环境：
-1. 使用环境：室内、户外、办公室、家庭等
-2. 使用时机：日常、特殊场合、季节性等
-3. 用户行为：如何使用、使用频率
-4. 搭配使用：与其他产品的配合
-5. 适用人群：年龄、性别、职业等
-
-请以JSON格式返回使用场景分析结果。`,
-
-  BRAND_ELEMENTS: `请识别视频中的品牌元素：
-1. Logo标识：品牌logo的位置和展示
-2. 品牌色彩：品牌专用色彩
-3. 包装设计：产品包装的品牌特征
-4. 品牌文字：品牌名称、标语等
-5. 品牌风格：整体品牌调性和风格
-
-请以JSON格式返回品牌元素分析结果。`,
-
-  ATMOSPHERE: `请分析视频的整体氛围和情感表达：
-1. 视觉氛围：明亮、温馨、专业、时尚等
-2. 情感基调：快乐、严肃、轻松、高端等
-3. 音乐风格：背景音乐的风格和情感
-4. 拍摄风格：镜头语言、构图风格
-5. 目标情感：想要传达的情感和感受
-
-请以JSON格式返回氛围分析结果。`
-};
+// Import prompts from centralized module
+import { PRODUCT_ANALYSIS_PROMPTS } from './simple-prompts';
 
 /**
  * Product feature analyzer class
@@ -90,27 +34,21 @@ export class ProductAnalyzer {
 
   /**
    * Analyze product features in video
+   * 简化版本：现在使用统一的视频分析提示词
    */
   async analyzeProductFeatures(
     videoFile: VideoFile,
     gcsPath: string,
-    options: AnalysisOptions = {}
+    _options: AnalysisOptions = {}
   ): Promise<ProductFeatures> {
     try {
       await this.initializeGeminiClient();
 
-      // Run comprehensive product analysis
-      const analysisResults = await Promise.allSettled([
-        this.analyzeAppearance(gcsPath),
-        this.analyzeMaterials(gcsPath),
-        this.analyzeFunctionality(gcsPath),
-        this.analyzeUsageScenarios(gcsPath),
-        this.analyzeBrandElements(gcsPath),
-        this.analyzeAtmosphere(gcsPath)
-      ]);
+      // 使用统一的产品分析提示词
+      const analysisResult = await this.runProductAnalysis(gcsPath, PRODUCT_ANALYSIS_PROMPTS.APPEARANCE);
 
-      // Combine results
-      return this.combineProductAnalysis(analysisResults);
+      // 解析结果为 ProductFeatures 格式
+      return this.parseAnalysisResult(analysisResult);
 
     } catch (error) {
       throw new VideoAnalyzerError(
@@ -126,45 +64,37 @@ export class ProductAnalyzer {
   }
 
   /**
-   * Analyze product appearance
+   * 解析分析结果为 ProductFeatures 格式
    */
-  private async analyzeAppearance(gcsPath: string): Promise<any> {
-    return this.runProductAnalysis(gcsPath, PRODUCT_ANALYSIS_PROMPTS.APPEARANCE);
-  }
+  private parseAnalysisResult(analysisResult: any): ProductFeatures {
+    // 由于现在使用统一的提示词，直接解析 JSON 结果
+    try {
+      const parsed = typeof analysisResult === 'string' ? JSON.parse(analysisResult) : analysisResult;
 
-  /**
-   * Analyze product materials
-   */
-  private async analyzeMaterials(gcsPath: string): Promise<any> {
-    return this.runProductAnalysis(gcsPath, PRODUCT_ANALYSIS_PROMPTS.MATERIALS);
-  }
-
-  /**
-   * Analyze product functionality
-   */
-  private async analyzeFunctionality(gcsPath: string): Promise<any> {
-    return this.runProductAnalysis(gcsPath, PRODUCT_ANALYSIS_PROMPTS.FUNCTIONALITY);
-  }
-
-  /**
-   * Analyze usage scenarios
-   */
-  private async analyzeUsageScenarios(gcsPath: string): Promise<any> {
-    return this.runProductAnalysis(gcsPath, PRODUCT_ANALYSIS_PROMPTS.USAGE_SCENARIOS);
-  }
-
-  /**
-   * Analyze brand elements
-   */
-  private async analyzeBrandElements(gcsPath: string): Promise<any> {
-    return this.runProductAnalysis(gcsPath, PRODUCT_ANALYSIS_PROMPTS.BRAND_ELEMENTS);
-  }
-
-  /**
-   * Analyze video atmosphere
-   */
-  private async analyzeAtmosphere(gcsPath: string): Promise<any> {
-    return this.runProductAnalysis(gcsPath, PRODUCT_ANALYSIS_PROMPTS.ATMOSPHERE);
+      return {
+        appearance: {
+          colors: parsed.appearance?.colors || parsed.colors || [],
+          shape: parsed.appearance?.shape || parsed.shape || '',
+          size: parsed.appearance?.size || parsed.size || '',
+          style: parsed.appearance?.style || parsed.style || ''
+        },
+        materials: parsed.materials || [],
+        functionality: parsed.functionality || [],
+        usageScenarios: parsed.usageScenarios || parsed.usage_scenarios || [],
+        targetAudience: parsed.targetAudience || parsed.target_audience || '',
+        brandElements: parsed.brandElements || parsed.brand_elements || []
+      };
+    } catch (error) {
+      // 如果解析失败，返回默认结构
+      return {
+        appearance: { colors: [], shape: '', size: '', style: '' },
+        materials: [],
+        functionality: [],
+        usageScenarios: [],
+        targetAudience: '',
+        brandElements: []
+      };
+    }
   }
 
   /**
@@ -324,9 +254,10 @@ export class ProductAnalyzer {
 
   /**
    * Analyze product for e-commerce categorization
+   * 简化版本：使用统一的提示词
    */
   async analyzeForEcommerce(
-    videoFile: VideoFile,
+    _videoFile: VideoFile,
     gcsPath: string
   ): Promise<{
     category: string;

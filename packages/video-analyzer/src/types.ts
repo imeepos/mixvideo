@@ -69,14 +69,6 @@ export interface AnalysisMode {
 }
 
 export interface AnalysisOptions {
-  /** Enable scene detection */
-  enableSceneDetection?: boolean;
-  /** Enable object detection */
-  enableObjectDetection?: boolean;
-  /** Enable product feature analysis */
-  enableProductAnalysis?: boolean;
-  /** Enable content summarization */
-  enableSummarization?: boolean;
   /** Frame sampling interval in seconds (for GPT-4 mode) */
   frameSamplingInterval?: number;
   /** Maximum number of frames to analyze */

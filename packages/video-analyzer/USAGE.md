@@ -25,12 +25,14 @@ const analyzer = new VideoAnalyzer({
 });
 
 // 分析视频文件
-const result = await analyzer.analyzeVideo(videoFile, {
-  enableSceneDetection: true,
-  enableObjectDetection: true,
-  enableSummarization: true,
-  language: 'zh-CN'
-});
+const result = await analyzer.analyzeVideo(
+  videoFile,
+  { type: 'gemini', model: 'gemini-2.5-flash' },
+  {
+    quality: 'high',
+    language: 'zh-CN'
+  }
+);
 
 console.log('分析结果:', result);
 ```
@@ -40,20 +42,17 @@ console.log('分析结果:', result);
 ### 视频分析
 
 ```typescript
-const result = await analyzer.analyzeVideo(videoFile, {
-  // 启用场景检测
-  enableSceneDetection: true,
-  
-  // 启用物体识别
-  enableObjectDetection: true,
-  
-  // 启用内容总结
-  enableSummarization: true,
-  
-  // 帧采样间隔（秒）
-  frameSamplingInterval: 2,
-  
-  // 最大帧数
+const result = await analyzer.analyzeVideo(
+  videoFile,
+  { type: 'gemini', model: 'gemini-2.5-flash' },
+  {
+    // 分析质量
+    quality: 'high',
+
+    // 帧采样间隔（秒）
+    frameSamplingInterval: 2,
+
+    // 最大帧数
   maxFrames: 30,
   
   // 质量设置
@@ -130,7 +129,7 @@ for (const [videoId, result] of results) {
 import { analyzeVideoQuick } from '@mixvideo/video-analyzer';
 
 const result = await analyzeVideoQuick(videoFile, 'your-api-key', {
-  enableSceneDetection: true
+  quality: 'medium'
 });
 ```
 
@@ -222,12 +221,15 @@ const result = await analyzer.analyzeVideo(videoFile, {
 ### 3. 选择性分析
 
 ```typescript
-// 只启用需要的功能
-const result = await analyzer.analyzeVideo(videoFile, {
-  enableSceneDetection: true,
-  enableObjectDetection: false, // 禁用物体检测以提高速度
-  enableSummarization: true
-});
+// 调整分析质量以平衡速度和准确性
+const result = await analyzer.analyzeVideo(
+  videoFile,
+  { type: 'gemini', model: 'gemini-2.5-flash' },
+  {
+    quality: 'medium', // 使用中等质量以提高速度
+    maxFrames: 20      // 限制帧数以提高速度
+  }
+);
 ```
 
 ## 支持的视频格式

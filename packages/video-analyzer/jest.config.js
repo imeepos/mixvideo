@@ -9,16 +9,14 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: {
-        compilerOptions: {
-          module: 'commonjs',
-          target: 'es2020',
-          lib: ['es2020'],
-          moduleResolution: 'node',
-          allowSyntheticDefaultImports: true,
-          esModuleInterop: true,
-          skipLibCheck: true,
-          strict: true
-        }
+        module: 'commonjs',
+        target: 'es2020',
+        lib: ['es2020'],
+        moduleResolution: 'node',
+        allowSyntheticDefaultImports: true,
+        esModuleInterop: true,
+        skipLibCheck: true,
+        strict: true
       }
     }],
   },
