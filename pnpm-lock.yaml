@@ -45,6 +45,9 @@ importers:
       '@mixvideo/jianying':
         specifier: workspace:*
         version: link:../jianying
+      '@mixvideo/video-analyzer':
+        specifier: workspace:*
+        version: link:../video-analyzer
       commander:
         specifier: ^14.0.0
         version: 14.0.0
