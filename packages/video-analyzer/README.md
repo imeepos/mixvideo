@@ -1,17 +1,25 @@
 # @mixvideo/video-analyzer
 
-🎬 Comprehensive video analysis tool for the mixvideo project. Supports folder scanning, video upload, content analysis, and smart categorization using AI models like Gemini and GPT-4.
+🎯 **完整的视频分析和组织工作流程**
 
-## Features
+AI驱动的视频分析工具，实现完整的工作流程：**AI分析视频内容和质量 → 智能匹配文件夹 → 自动移动重命名文件**
 
-- 🎥 **Video Scanning**: Scan folders for video files with support for multiple formats (MP4, MOV, AVI, MKV, WebM, etc.)
-- 🤖 **Gemini Integration**: Upload videos to Gemini AI for intelligent content analysis
-- 🖼️ **GPT-4 Frame Analysis**: Extract and analyze video frames using GPT-4 Vision
-- 🛍️ **Product Analysis**: Specialized e-commerce product feature recognition
-- 📁 **Smart Folder Matching**: AI-powered folder recommendation system with confidence scoring
-- 📊 **Report Generation**: Export analysis results in multiple formats (XML, JSON, CSV, HTML)
-- ⏱️ **Progress Tracking**: Real-time progress callbacks for all operations
-- 🚨 **Error Handling**: Comprehensive error handling with detailed error codes and context
+## 🌟 核心功能
+
+### 完整工作流程
+1. **🔍 AI分析视频内容和质量** - 使用 Gemini/GPT-4 深度分析视频
+2. **📁 智能匹配文件夹** - 根据内容自动推荐最合适的文件夹
+3. **📂 自动移动和重命名** - 将视频移动到目标文件夹并智能重命名
+
+### 核心特性
+- 🎬 **多模态分析**: 支持 GPT-4 Vision (逐帧) 和 Gemini (整体视频分析)
+- 🔍 **智能内容检测**: 场景检测、物体识别、内容总结
+- 📊 **产品特征分析**: 专门针对产品视频的外观、材质、功能分析
+- 📁 **智能文件夹匹配**: 基于内容自动匹配合适的文件夹
+- 📂 **智能文件组织**: 自动移动、重命名、创建目录结构
+- 📈 **全面报告**: 生成详细的分析和组织报告
+- 🚀 **批量处理**: 高效处理整个目录的视频
+- 🎯 **灵活配置**: 可自定义分析选项、命名策略、组织规则
 
 ## Installation
 
@@ -19,29 +27,68 @@
 npm install @mixvideo/video-analyzer
 ```
 
-## Quick Start
+## 🚀 快速开始
 
+### 一键完成所有操作
 ```typescript
-import { VideoAnalyzer, createVideoAnalyzer } from '@mixvideo/video-analyzer';
+import { VideoAnalyzer } from '@mixvideo/video-analyzer';
 
-// Create analyzer instance
-const analyzer = createVideoAnalyzer({
-  upload: {
-    bucketName: 'my-video-bucket',
-    filePrefix: 'analysis/'
+// 初始化分析器
+const analyzer = new VideoAnalyzer({
+  workflow: {
+    minConfidenceForMove: 0.7, // 置信度阈值
+    fileOrganizerConfig: {
+      moveFiles: true,        // 移动文件
+      namingMode: 'smart',    // 智能命名
+      createBackup: true      // 创建备份
+    }
   }
 });
 
-// Analyze a directory with Gemini
-const results = await analyzer.analyzeDirectory(
-  '/path/to/videos',
+// 🎯 一键处理：分析 + 匹配 + 组织
+const result = await analyzer.processDirectory(
+  '/path/to/source/videos',      // 源视频目录
+  '/path/to/organized/videos',   // 目标组织目录
   { type: 'gemini', model: 'gemini-2.5-flash' },
-  undefined, // scan options
-  { quality: 'high' }, // analysis options
-  (progress) => console.log(`${progress.step}: ${progress.progress}%`)
+  {
+    minConfidenceForMove: 0.8,   // 高置信度要求
+    fileOrganizerConfig: {
+      namingMode: 'smart',
+      createDirectories: true
+    }
+  },
+  (progress) => {
+    console.log(`[${progress.phase}] ${progress.step}: ${progress.progress}%`);
+    console.log(`已处理: ${progress.processedVideos}/${progress.totalVideos}`);
+  }
 );
 
-console.log('Analysis complete:', results);
+console.log(`成功组织 ${result.organizedVideos}/${result.totalVideos} 个视频`);
+```
+
+### 分步骤处理（精细控制）
+```typescript
+// 1. 分析视频并获取推荐
+const { analysis, recommendations } = await analyzer.analyzeAndRecommend(
+  videoFile,
+  { type: 'gemini', model: 'gemini-2.5-flash' },
+  '/path/to/target/directory'
+);
+
+// 2. 查看推荐结果
+recommendations.forEach(rec => {
+  console.log(`${rec.folderName}: ${rec.confidence} - ${rec.reasons.join(', ')}`);
+});
+
+// 3. 选择并组织文件
+if (recommendations[0].confidence > 0.7) {
+  const result = await analyzer.organizeVideo(
+    videoFile,
+    analysis,
+    recommendations[0].folderPath
+  );
+  console.log(`文件已移动: ${result.originalPath} -> ${result.newPath}`);
+}
 ```
 
 ## Analysis Modes

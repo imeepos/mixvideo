@@ -1,5 +1,10 @@
 /**
- * Main VideoAnalyzer class - orchestrates all video analysis functionality
+ * Main VideoAnalyzer class - 完整的视频分析和组织工作流程
+ *
+ * 核心流程：
+ * 1. AI分析视频内容和质量
+ * 2. 根据内容匹配合适的文件夹
+ * 3. 移动视频到相应文件夹并重命名
  */
 
 import { VideoScanner } from './video-scanner';
@@ -9,6 +14,8 @@ import { ProductAnalyzer } from './product-analyzer';
 import { FolderMatcher, FolderMatchConfig } from './folder-matcher';
 import { ReportGenerator, ReportOptions } from './report-generator';
 import { FrameAnalyzer } from './frame-analyzer';
+import { WorkflowManager, WorkflowConfig, WorkflowResult, WorkflowProgress } from './workflow-manager';
+import { FileOrganizer, FileOrganizerConfig, FileOperationResult } from './file-organizer';
 import {
   VideoFile,
   VideoScanOptions,
@@ -22,10 +29,18 @@ import {
 } from './types';
 
 /**
- * Main VideoAnalyzer class
+ * 扩展的配置接口，包含工作流程配置
+ */
+export interface ExtendedVideoAnalyzerConfig extends VideoAnalyzerConfig {
+  /** 工作流程配置 */
+  workflow?: WorkflowConfig;
+}
+
+/**
+ * Main VideoAnalyzer class - 完整的视频分析和组织系统
  */
 export class VideoAnalyzer {
-  private config: VideoAnalyzerConfig;
+  private config: ExtendedVideoAnalyzerConfig;
   private scanner: VideoScanner;
   private uploader: VideoUploader | null = null;
   private analysisEngine: AnalysisEngine;
@@ -33,16 +48,102 @@ export class VideoAnalyzer {
   private folderMatcher: FolderMatcher | null = null;
   private reportGenerator: ReportGenerator;
   private frameAnalyzer: FrameAnalyzer;
+  private workflowManager: WorkflowManager;
+  private fileOrganizer: FileOrganizer;
 
-  constructor(config: VideoAnalyzerConfig = {}) {
+  constructor(config: ExtendedVideoAnalyzerConfig = {}) {
     this.config = config;
-    
-    // Initialize components
+
+    // Initialize core components
     this.scanner = new VideoScanner();
     this.analysisEngine = new AnalysisEngine();
     this.productAnalyzer = new ProductAnalyzer();
     this.reportGenerator = new ReportGenerator();
     this.frameAnalyzer = new FrameAnalyzer();
+
+    // Initialize workflow components
+    this.workflowManager = new WorkflowManager(config.workflow);
+    this.fileOrganizer = new FileOrganizer(config.workflow?.fileOrganizerConfig);
+  }
+
+  /**
+   * 🎯 核心方法：完整的视频分析和组织工作流程
+   *
+   * 执行完整流程：扫描 → 分析 → 匹配 → 移动重命名
+   */
+  async processVideosComplete(
+    sourceDirectory: string,
+    analysisMode: AnalysisMode,
+    onProgress?: (progress: WorkflowProgress) => void
+  ): Promise<WorkflowResult> {
+    try {
+      return await this.workflowManager.executeWorkflow(
+        sourceDirectory,
+        analysisMode,
+        onProgress
+      );
+    } catch (error) {
+      throw new VideoAnalyzerError(
+        `完整工作流程执行失败: ${error instanceof Error ? error.message : String(error)}`,
+        'WORKFLOW_FAILED',
+        error
+      );
+    }
+  }
+
+  /**
+   * 🔍 分析单个视频并推荐文件夹
+   */
+  async analyzeAndRecommend(
+    videoFile: VideoFile,
+    analysisMode: AnalysisMode,
+    targetDirectory: string,
+    options: AnalysisOptions = {}
+  ): Promise<{
+    analysis: VideoAnalysisResult;
+    recommendations: FolderMatchResult[];
+  }> {
+    try {
+      // 1. 分析视频
+      const analysis = await this.analyzeVideo(videoFile, analysisMode, options);
+
+      // 2. 匹配文件夹
+      let recommendations: FolderMatchResult[] = [];
+      if (this.folderMatcher) {
+        recommendations = await this.folderMatcher.findMatchingFolders(analysis);
+      } else {
+        // 如果没有配置文件夹匹配器，创建临时的
+        const tempMatcher = new FolderMatcher({ baseDirectory: targetDirectory });
+        recommendations = await tempMatcher.findMatchingFolders(analysis);
+      }
+
+      return { analysis, recommendations };
+    } catch (error) {
+      throw new VideoAnalyzerError(
+        `视频分析和推荐失败: ${error instanceof Error ? error.message : String(error)}`,
+        'ANALYZE_RECOMMEND_FAILED',
+        error
+      );
+    }
+  }
+
+  /**
+   * 📁 组织单个视频文件
+   */
+  async organizeVideo(
+    videoFile: VideoFile,
+    analysisResult: VideoAnalysisResult,
+    targetFolder: string
+  ): Promise<FileOperationResult> {
+    try {
+      return await this.fileOrganizer.organizeVideo(videoFile, analysisResult, targetFolder);
+    } catch (error) {
+      throw new VideoAnalyzerError(
+        `视频组织失败: ${error instanceof Error ? error.message : String(error)}`,
+        'ORGANIZE_FAILED',
+        error
+      );
+    }
   }
 
   /**
@@ -171,6 +272,33 @@ export class VideoAnalyzer {
         error
       );
     }
+  }
+
+  /**
+   * 🚀 快速处理：分析目录中的所有视频并自动组织
+   *
+   * 这是最常用的方法，一键完成所有操作
+   */
+  async processDirectory(
+    sourceDirectory: string,
+    targetDirectory: string,
+    analysisMode: AnalysisMode,
+    options: {
+      analysisOptions?: AnalysisOptions;
+      fileOrganizerConfig?: FileOrganizerConfig;
+      minConfidenceForMove?: number;
+    } = {},
+    onProgress?: (progress: WorkflowProgress) => void
+  ): Promise<WorkflowResult> {
+    // 更新工作流程配置
+    this.workflowManager.updateConfig({
+      folderMatchConfig: { baseDirectory: targetDirectory },
+      fileOrganizerConfig: options.fileOrganizerConfig,
+      minConfidenceForMove: options.minConfidenceForMove || 0.6,
+      analysisOptions: options.analysisOptions
+    });
+
+    return await this.processVideosComplete(sourceDirectory, analysisMode, onProgress);
   }
 
   /**

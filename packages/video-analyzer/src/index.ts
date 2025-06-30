@@ -17,3 +17,7 @@ export * from './video-analyzer';
 
 // 导出简化的提示词系统
 export * from './simple-prompts';
+
+// 导出新的工作流程组件
+export * from './workflow-manager';
+export * from './file-organizer';
