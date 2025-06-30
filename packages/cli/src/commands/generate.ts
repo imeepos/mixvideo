@@ -1,10 +1,11 @@
 import { Command } from 'commander';
-import { join } from 'path';
-import { writeFile, readdir } from 'fs/promises';
+import { join, basename, extname } from 'path';
+import { writeFile, readdir, mkdir, copyFile } from 'fs/promises';
 import { parse } from '@mixvideo/jianying';
 import { scanVideoDirectory, type VideoInfo } from '../utils/video-scanner';
 import { execSync } from 'child_process';
 import { randomUUID } from 'crypto';
+import { homedir, platform } from 'os';
 
 /**
  * 视频元数据接口
@@ -85,11 +86,59 @@ function generateUUID(): string {
 }
 
 /**
- * 创建剪映工程 JSON
+ * 获取剪映草稿目录路径
  */
-async function createJianyingProject(videoPaths: string[]): Promise<any> {
+function getJianyingDraftPath(): string {
+    const home = homedir();
+    const os = platform();
+
+    switch (os) {
+        case 'win32':
+            return join(home, 'AppData', 'Local', 'JianyingPro', 'User Data', 'Projects', 'com.lveditor.draft');
+        case 'darwin':
+            return join(home, 'Movies', 'JianyingPro', 'User Data', 'Projects', 'com.lveditor.draft');
+        default: // Linux
+            return join(home, '.local', 'share', 'JianyingPro', 'User Data', 'Projects', 'com.lveditor.draft');
+    }
+}
+
+/**
+ * 创建完整的剪映工程（包括目录结构和文件复制）
+ */
+async function createJianyingProject(
+    videoPaths: string[],
+    outputPath: string,
+    options: { useDraftDir?: boolean; projectName?: string } = {}
+): Promise<{ projectData: any; projectDir: string; isDraftProject: boolean }> {
     const now = Math.floor(Date.now() / 1000);
     let totalDuration = 0;
+
+    // 确定项目目录
+    let projectDir: string;
+    let isDraftProject = false;
+
+    if (options.useDraftDir) {
+        // 在剪映草稿目录创建项目
+        const draftBasePath = getJianyingDraftPath();
+        const projectId = generateUUID();
+        projectDir = join(draftBasePath, projectId);
+        isDraftProject = true;
+        console.log(`📁 在剪映草稿目录创建项目: ${projectId}`);
+    } else {
+        // 在指定位置创建项目
+        projectDir = outputPath.replace('.json', '');
+        console.log(`📁 创建工程目录: ${projectDir}`);
+    }
+
+    const videoDir = join(projectDir, 'video');
+
+    try {
+        await mkdir(projectDir, { recursive: true });
+        await mkdir(videoDir, { recursive: true });
+    } catch (error) {
+        console.error('❌ 创建目录失败:', error);
+        throw error;
+    }
 
     // 创建主轨道 ID
     const mainTrackId = generateUUID();
@@ -134,6 +183,19 @@ async function createJianyingProject(videoPaths: string[]): Promise<any> {
 
         if (!metadata) {
             console.warn(`⚠️ 跳过文件: ${videoPath} (无法获取元数据)`);
+            continue;
+        }
+
+        // 复制视频文件到工程目录
+        const fileExt = extname(videoPath);
+        const newFileName = `video_${String(i + 1).padStart(3, '0')}${fileExt}`;
+        const destPath = join(videoDir, newFileName);
+
+        try {
+            await copyFile(videoPath, destPath);
+            console.log(`📋 复制视频 ${i + 1}: ${basename(videoPath)} -> ${newFileName}`);
+        } catch (error) {
+            console.error(`❌ 复制文件失败: ${videoPath}`, error);
             continue;
         }
 
@@ -182,7 +244,7 @@ async function createJianyingProject(videoPaths: string[]): Promise<any> {
                 path: ""
             },
             media_meta: null,
-            path: join("video", `video_${String(i + 1).padStart(3, '0')}.mp4`),
+            path: join("video", newFileName),
             real_duration: metadata.duration,
             recognize_type: 0,
             reverse_intensifies_path: "",
@@ -255,7 +317,26 @@ async function createJianyingProject(videoPaths: string[]): Promise<any> {
     // 更新总时长
     projectData.duration = totalDuration;
 
-    return projectData;
+    return { projectData, projectDir, isDraftProject };
+}
+
+/**
+ * 创建 draft_meta_info.json 文件
+ */
+function createDraftMetaInfo(projectName: string): any {
+    const now = Math.floor(Date.now() / 1000);
+
+    return {
+        "create_time": now,
+        "draft_cover": "",
+        "draft_fold_path": "",
+        "draft_id": generateUUID(),
+        "draft_name": projectName,
+        "draft_removable_storage_device": "",
+        "draft_root_path": "",
+        "tm_draft_create": now,
+        "tm_draft_modified": now
+    };
 }
 
 /**
@@ -283,6 +364,7 @@ export function createGenerateCommand(): Command {
         .option('--title <title>', '项目标题', '视频项目')
         .option('--fps <number>', '帧率', '30')
         .option('--resolution <resolution>', '分辨率 (1080p|720p|4k)', '1080p')
+        .option('--draft-dir', '直接在剪映草稿目录创建项目')
         .action(async (source, options) => {
             try {
                 console.log('🎬 开始从视频目录生成剪映草稿...');
@@ -301,18 +383,37 @@ export function createGenerateCommand(): Command {
                 // 获取视频路径列表
                 const videoPaths = videos.map(video => video.path);
 
-                // 创建完整的剪映工程
-                console.log('🔍 分析视频元数据...');
-                const projectData = await createJianyingProject(videoPaths);
-
-                // 保存草稿文件
+                // 保存草稿文件路径
                 const outputPath = join(process.cwd(), options.output);
-                await writeFile(outputPath, JSON.stringify(projectData, null, 2));
+
+                // 创建完整的剪映工程
+                console.log('🔍 分析视频元数据并创建工程...');
+                const result = await createJianyingProject(videoPaths, outputPath, {
+                    useDraftDir: options.draftDir,
+                    projectName: options.title
+                });
+
+                // 保存草稿 JSON 文件到工程目录内
+                const draftJsonPath = join(result.projectDir, 'draft_content.json');
+                await writeFile(draftJsonPath, JSON.stringify(result.projectData, null, 2));
+
+                // 如果是草稿项目，还需要创建 draft_meta_info.json
+                if (result.isDraftProject) {
+                    const metaInfo = createDraftMetaInfo(options.title);
+                    const metaJsonPath = join(result.projectDir, 'draft_meta_info.json');
+                    await writeFile(metaJsonPath, JSON.stringify(metaInfo, null, 2));
+                    console.log('📄 已创建草稿元信息文件');
+                }
 
                 console.log('✅ 剪映草稿生成完成！');
-                console.log(`📄 草稿文件已保存到: ${outputPath}`);
+                if (result.isDraftProject) {
+                    console.log('🎯 项目已直接创建在剪映草稿目录中');
+                    console.log('💡 重启剪映即可在草稿列表中看到项目');
+                }
+                console.log(`📁 工程目录: ${result.projectDir}`);
+                console.log(`📄 草稿文件: ${draftJsonPath}`);
                 console.log(`🎬 包含 ${videos.length} 个视频片段`);
-                console.log(`⏱️ 总时长: ${(projectData.duration / 1_000_000_000).toFixed(2)} 秒`);
+                console.log(`⏱️ 总时长: ${(result.projectData.duration / 1_000_000_000).toFixed(2)} 秒`);
 
             } catch (error) {
                 console.error('❌ 生成草稿过程中出现错误:', error);
