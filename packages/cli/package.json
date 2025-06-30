@@ -1,6 +1,6 @@
 {
   "name": "@mixvideo/cli",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "AI-powered video analysis and editing CLI tool for automatic video classification and Jianying draft generation",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -36,8 +36,8 @@
   "author": "MixVideo Team",
   "license": "MIT",
   "dependencies": {
-    "@mixvideo/jianying": "workspace:*",
-    "@mixvideo/video-analyzer": "workspace:*",
+    "@mixvideo/jianying": "^1.0.0",
+    "@mixvideo/video-analyzer": "^1.0.0",
     "commander": "^14.0.0"
   },
   "devDependencies": {

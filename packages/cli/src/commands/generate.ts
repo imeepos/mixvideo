@@ -3,25 +3,269 @@ import { join } from 'path';
 import { writeFile, readdir } from 'fs/promises';
 import { parse } from '@mixvideo/jianying';
 import { scanVideoDirectory, type VideoInfo } from '../utils/video-scanner';
+import { execSync } from 'child_process';
+import { randomUUID } from 'crypto';
 
-// 排除已经用过的文件
-const usedFiles = new Set<string>();
+/**
+ * 视频元数据接口
+ */
+interface VideoMetadata {
+    duration: number; // 纳秒
+    width: number;
+    height: number;
+}
+
+/**
+ * 剪映素材接口
+ */
+interface JianyingMaterial {
+    id: string;
+    path: string;
+    duration: number;
+    width: number;
+    height: number;
+    has_audio: boolean;
+    import_time: number;
+    type: string;
+    [key: string]: any;
+}
+
+/**
+ * 剪映轨道片段接口
+ */
+interface JianyingSegment {
+    id: string;
+    material_id: string;
+    source_timerange: { duration: number; start: number };
+    target_timerange: { duration: number; start: number };
+    [key: string]: any;
+}
+
+/**
+ * 使用 ffprobe 获取视频元数据
+ */
+async function getVideoMetadata(videoPath: string): Promise<VideoMetadata | null> {
+    try {
+        const cmd = [
+            'ffprobe',
+            '-v', 'quiet',
+            '-print_format', 'json',
+            '-show_format',
+            '-show_streams',
+            `"${videoPath}"`
+        ].join(' ');
+
+        const result = execSync(cmd, { encoding: 'utf-8' });
+        const data = JSON.parse(result);
+
+        const videoStream = data.streams?.find((stream: any) => stream.codec_type === 'video');
+
+        if (!videoStream) {
+            console.warn(`⚠️ 未找到视频流: ${videoPath}`);
+            return null;
+        }
+
+        const duration = parseFloat(videoStream.duration || '0') * 1_000_000_000; // 转换为纳秒
+        const width = parseInt(videoStream.width || '0');
+        const height = parseInt(videoStream.height || '0');
+
+        return { duration, width, height };
+
+    } catch (error) {
+        console.error(`❌ 获取视频元数据失败: ${videoPath}`, error);
+        return null;
+    }
+}
+
+/**
+ * 生成 UUID（大写格式，符合剪映要求）
+ */
+function generateUUID(): string {
+    return randomUUID().toUpperCase();
+}
+
+/**
+ * 创建剪映工程 JSON
+ */
+async function createJianyingProject(videoPaths: string[]): Promise<any> {
+    const now = Math.floor(Date.now() / 1000);
+    let totalDuration = 0;
+
+    // 创建主轨道 ID
+    const mainTrackId = generateUUID();
+
+    // 初始化工程数据结构
+    const projectData = {
+        version: "13.8.0",
+        id: generateUUID(),
+        create_time: now,
+        update_time: now,
+        duration: 0, // 将在后面更新
+        materials: {
+            videos: [] as JianyingMaterial[],
+            audios: [],
+            images: [],
+            texts: [],
+            effects: [],
+            transitions: [],
+            stickers: [],
+            charts: []
+        },
+        tracks: [
+            {
+                attribute: 0,
+                flag: 0,
+                id: mainTrackId,
+                is_default_name: true,
+                segments: [] as JianyingSegment[],
+                type: "video"
+            }
+        ],
+        extra: {
+            draft_fold_path: "",
+            draft_removable_storage_device: ""
+        }
+    };
+
+    // 处理每个视频文件
+    for (let i = 0; i < videoPaths.length; i++) {
+        const videoPath = videoPaths[i];
+        const metadata = await getVideoMetadata(videoPath);
+
+        if (!metadata) {
+            console.warn(`⚠️ 跳过文件: ${videoPath} (无法获取元数据)`);
+            continue;
+        }
+
+        const materialId = generateUUID();
+        const segmentId = generateUUID();
+
+        // 创建视频素材
+        const videoMaterial: JianyingMaterial = {
+            aigc_type: "none",
+            algorithm_gear: "default",
+            audio_fade: null,
+            cartoon_path: "",
+            category_id: "",
+            category_name: "local",
+            check_flag: 63487,
+            crop: {
+                lower_left_x: 0.0,
+                lower_left_y: 1.0,
+                lower_right_x: 1.0,
+                lower_right_y: 1.0,
+                upper_left_x: 0.0,
+                upper_left_y: 0.0,
+                upper_right_x: 1.0,
+                upper_right_y: 0.0
+            },
+            crop_ratio: "free",
+            crop_scale: 1.0,
+            duration: metadata.duration,
+            extra_type_option: 0,
+            formula_id: "",
+            freeze: null,
+            gameplay: null,
+            has_audio: true,
+            height: metadata.height,
+            id: materialId,
+            import_time: now,
+            intensifies_audio_path: "",
+            intensifies_path: "",
+            is_ai_matting: false,
+            is_trans_video: false,
+            local_id: "",
+            matting: {
+                flag: 0,
+                has_real_time_matting: false,
+                interactive_matting_path: "",
+                path: ""
+            },
+            media_meta: null,
+            path: join("video", `video_${String(i + 1).padStart(3, '0')}.mp4`),
+            real_duration: metadata.duration,
+            recognize_type: 0,
+            reverse_intensifies_path: "",
+            reverse_path: "",
+            source: 0,
+            source_platform: 0,
+            stable: null,
+            team_id: "",
+            type: "video",
+            video_algorithm: {
+                algorithms: [],
+                deflicker: null,
+                motion_blur_config: null,
+                noise_reduction: null,
+                path: "",
+                time_range: null
+            },
+            width: metadata.width
+        };
+
+        projectData.materials.videos.push(videoMaterial);
+
+        // 创建轨道片段
+        const trackSegment: JianyingSegment = {
+            cartoon: false,
+            clip: {
+                alpha: 1.0,
+                flip: { horizontal: false, vertical: false },
+                rotation: 0.0,
+                scale: { x: 1.0, y: 1.0 },
+                transform: { x: 0.0, y: 0.0 }
+            },
+            enable_adjust: true,
+            enable_color_curves: true,
+            enable_color_wheels: true,
+            enable_lut: false,
+            extra_material_refs: [],
+            got_audio_recognize_result: true,
+            hdr_settings: { intensity: 1.0, mode: 1, sdr_mode: 1 },
+            id: segmentId,
+            intensifies_audio: false,
+            is_placeholder: false,
+            is_tone_modify: false,
+            key_frame_refs: [],
+            last_operation_id: "",
+            material_id: materialId,
+            render_index: 0,
+            responsive_layout: {
+                enable: false,
+                target_adaptive_type: 0,
+                target_follow_type: 0,
+                target_id: ""
+            },
+            reverse: false,
+            source_timerange: { duration: metadata.duration, start: 0 },
+            speed: 1.0,
+            target_timerange: { duration: metadata.duration, start: totalDuration },
+            template_id: "",
+            template_scene: "default",
+            track_attribute: 0,
+            track_render_index: 0,
+            uniform_scale: null,
+            visible: true
+        };
+
+        projectData.tracks[0].segments.push(trackSegment);
+        totalDuration += metadata.duration;
+    }
+
+    // 更新总时长
+    projectData.duration = totalDuration;
+
+    return projectData;
+}
 
 /**
  * 根据名称获取素材视频
  */
-async function getMaterialVideoByName(dir: string, name: string): Promise<string> {
+async function getMaterialVideoByName(dir: string, _name: string): Promise<string> {
     const root = process.cwd();
     const files = await readdir(join(root, dir));
     const file = files[Math.floor(Math.random() * files.length)];
-    const used = join(root, dir, file);
-
-    if (usedFiles.has(used)) {
-        return getMaterialVideoByName(dir, name);
-    }
-
-    usedFiles.add(used);
-    return used;
+    return join(root, dir, file);
 }
 
 /**
@@ -54,41 +298,21 @@ export function createGenerateCommand(): Command {
 
                 console.log(`📁 找到 ${videos.length} 个视频文件`);
 
-                // 创建简单的草稿内容
-                const draftContent = {
-                    version: "13.8.0",
-                    materials: {
-                        videos: videos.map((video: VideoInfo, index: number) => ({
-                            id: `video_${index}`,
-                            path: video.path,
-                            name: video.name,
-                            duration: 5000000, // 默认5秒，微秒单位
-                            width: 1920,
-                            height: 1080
-                        }))
-                    },
-                    tracks: [
-                        {
-                            type: "video",
-                            segments: videos.map((_video: VideoInfo, index: number) => ({
-                                id: `segment_${index}`,
-                                material_id: `video_${index}`,
-                                target_timerange: {
-                                    start: index * 5000000,
-                                    duration: 5000000
-                                }
-                            }))
-                        }
-                    ]
-                };
+                // 获取视频路径列表
+                const videoPaths = videos.map(video => video.path);
+
+                // 创建完整的剪映工程
+                console.log('🔍 分析视频元数据...');
+                const projectData = await createJianyingProject(videoPaths);
 
                 // 保存草稿文件
                 const outputPath = join(process.cwd(), options.output);
-                await writeFile(outputPath, JSON.stringify(draftContent, null, 2));
+                await writeFile(outputPath, JSON.stringify(projectData, null, 2));
 
                 console.log('✅ 剪映草稿生成完成！');
                 console.log(`📄 草稿文件已保存到: ${outputPath}`);
                 console.log(`🎬 包含 ${videos.length} 个视频片段`);
+                console.log(`⏱️ 总时长: ${(projectData.duration / 1_000_000_000).toFixed(2)} 秒`);
 
             } catch (error) {
                 console.error('❌ 生成草稿过程中出现错误:', error);
