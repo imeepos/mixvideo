@@ -134,156 +134,24 @@ class VideoProcessingWithCallbacks:
 
         return categories
     
-    def process_video_with_callbacks(self, video_path: str, output_dir: str, 
-                                   organize_by: str = "duration", 
-                                   quality: str = "medium") -> bool:
+    def process_video_with_callbacks(self, video_path: str, output_dir: str,
+                                   organize_by: str = "duration",
+                                   quality: str = "medium",
+                                   enable_classification: bool = False,
+                                   classification_config: dict = None) -> bool:
         """带回调的视频处理"""
         try:
-            self.log("🎬 开始智能镜头检测与分段处理", "INFO")
-            self.log(f"视频文件: {video_path}", "INFO")
-            self.log(f"输出目录: {output_dir}", "INFO")
-            self.log(f"组织方式: {organize_by}", "INFO")
-            self.log(f"输出质量: {quality}", "INFO")
-            
-            # 步骤1: 验证输入文件
-            self.update_progress(0, "验证输入文件...")
-            self.log("📋 验证输入文件", "INFO")
-            
-            if not validate_video_file(video_path):
-                self.log("❌ 无效的视频文件", "ERROR")
-                return False
-            
-            video_info = get_basic_video_info(video_path)
-            self.log(f"📹 视频信息: {video_info['duration']:.1f}s, {video_info['fps']:.1f} FPS, ({video_info['width']}, {video_info['height']})", "INFO")
-            self.update_progress(100, "文件验证完成")
-            
-            # 步骤2: 初始化检测器
-            self.update_progress(0, "初始化检测器...")
-            self.log("🤖 初始化镜头检测算法", "INFO")
+            # 直接调用video_segmentation中的完整处理函数
+            from video_segmentation import process_video_segmentation
 
-            config = ConfigManager()
-            multi_detector = MultiDetector()
-
-            # 添加检测器
-            frame_diff_detector = FrameDifferenceDetector(threshold=0.3)
-            histogram_detector = HistogramDetector(threshold=0.4)
-
-            multi_detector.add_detector(frame_diff_detector, weight=0.5)
-            multi_detector.add_detector(histogram_detector, weight=0.5)
-
-            if not multi_detector.initialize_all():
-                self.log("❌ 检测器初始化失败", "ERROR")
-                return False
-
-            self.log("✅ 检测器初始化完成", "SUCCESS")
-            self.update_progress(100, "检测器初始化完成")
-            
-            # 步骤3: 执行镜头检测
-            self.update_progress(0, "执行镜头检测...")
-            self.log("🎯 开始镜头检测", "INFO")
-            
-            start_time = time.time()
-            detection_result = multi_detector.detect_shots_ensemble(video_path)
-            detection_time = time.time() - start_time
-            
-            self.log(f"✅ 检测完成! 耗时: {detection_time:.2f}s", "SUCCESS")
-            self.log(f"🎯 检测到 {len(detection_result.boundaries)} 个镜头边界", "INFO")
-            self.update_progress(100, f"检测到 {len(detection_result.boundaries)} 个边界")
-            
-            # 步骤4: 生成分段信息
-            self.update_progress(0, "生成分段信息...")
-            self.log("📋 生成视频分段信息", "INFO")
-
-            processor = VideoProcessor(config)
-            segments = processor._generate_segment_info(
-                detection_result.boundaries,
-                video_info['fps'],
-                video_info['duration'],
-                output_dir,
-                video_path
+            return process_video_segmentation(
+                video_path=video_path,
+                output_dir=output_dir,
+                organize_by=organize_by,
+                quality=quality,
+                enable_classification=enable_classification,
+                classification_config=classification_config
             )
-            
-            # 过滤短分段
-            min_duration = config.quality.min_segment_duration
-            filtered_segments = [s for s in segments if s.duration >= min_duration]
-            
-            self.log(f"📊 过滤后保留 {len(filtered_segments)} 个分段 (≥{min_duration}s)", "INFO")
-            self.update_progress(100, f"生成 {len(filtered_segments)} 个分段")
-            
-            # 步骤5: 切分视频文件
-            self.update_progress(0, "切分视频文件...")
-            self.log("✂️ 开始视频切分", "INFO")
-            
-            # 组织分段
-            from pathlib import Path
-            output_path = Path(output_dir)
-
-            if organize_by == "duration":
-                self.log("📁 按时长组织分段...", "INFO")
-                organized_segments = self.organize_segments_by_duration(filtered_segments, output_path)
-            elif organize_by == "quality":
-                self.log("📁 按质量组织分段...", "INFO")
-                organized_segments = self.organize_segments_by_quality(filtered_segments, output_path)
-            else:
-                # 默认：所有分段放在同一目录
-                organized_segments = {"all": filtered_segments}
-            
-            # 切分视频
-            success_count = 0
-            total_segments = sum(len(segments) for segments in organized_segments.values())
-            
-            for category, category_segments in organized_segments.items():
-                self.log(f"📁 处理类别: {category} ({len(category_segments)} 个分段)", "INFO")
-                
-                for i, segment in enumerate(category_segments):
-                    segment_progress = ((success_count + i) / total_segments) * 100
-                    self.update_progress(segment_progress, f"切分视频 {success_count + i + 1}/{total_segments}")
-                    
-                    self.log(f"[{i+1}/{len(category_segments)}] 切分: {segment.file_path.name}", "INFO")
-                    self.log(f"  时间: {segment.start_time:.2f}s - {segment.end_time:.2f}s (时长: {segment.duration:.2f}s)", "INFO")
-
-                    success = create_segment_with_ffmpeg(video_path, segment, quality)
-                    
-                    if success:
-                        success_count += 1
-                        self.log(f"✅ 分段创建成功: {segment.file_path.name}", "SUCCESS")
-                    else:
-                        self.log(f"❌ 分段创建失败: {segment.file_path.name}", "ERROR")
-            
-            self.update_progress(100, f"视频切分完成 ({success_count}/{total_segments})")
-            
-            # 步骤6: 生成项目文件
-            self.update_progress(0, "生成项目文件...")
-            self.log("📤 生成项目文件", "INFO")
-            
-            exporter = ProjectExporter(config)
-            exporter.export_all_formats(video_path, detection_result, filtered_segments, output_dir)
-            
-            self.log("✅ 项目文件生成完成", "SUCCESS")
-            self.update_progress(100, "项目文件生成完成")
-            
-            # 步骤7: 生成分析报告
-            self.update_progress(0, "生成分析报告...")
-            self.log("📊 生成分析报告", "INFO")
-            
-            report_generator = ReportGenerator(config)
-            report_generator.generate_report(video_path, detection_result, filtered_segments, output_dir)
-            
-            self.log("✅ 分析报告生成完成", "SUCCESS")
-            self.update_progress(100, "分析报告生成完成")
-            
-            # 清理资源
-            multi_detector.cleanup_all()
-            
-            # 显示最终结果
-            self.log("📊 处理结果:", "INFO")
-            self.log(f"  总分段数: {len(filtered_segments)}", "INFO")
-            self.log(f"  成功切分: {success_count}", "INFO")
-            self.log(f"  失败数量: {len(filtered_segments) - success_count}", "INFO")
-            self.log(f"  成功率: {(success_count/len(filtered_segments)*100):.1f}%", "INFO")
-            
-            self.log("🎉 视频分段和切分完成!", "SUCCESS")
-            return True
             
         except Exception as e:
             self.log(f"❌ 处理过程中出错: {e}", "ERROR")
@@ -292,14 +160,19 @@ class VideoProcessingWithCallbacks:
             return False
 
 
-def process_video_with_gui_callbacks(video_path: str, output_dir: str, 
-                                   organize_by: str = "duration", 
+def process_video_with_gui_callbacks(video_path: str, output_dir: str,
+                                   organize_by: str = "duration",
                                    quality: str = "medium",
                                    progress_callback: Optional[Callable] = None,
-                                   log_callback: Optional[Callable] = None) -> bool:
+                                   log_callback: Optional[Callable] = None,
+                                   enable_classification: bool = False,
+                                   classification_config: dict = None) -> bool:
     """带GUI回调的视频处理函数"""
     processor = VideoProcessingWithCallbacks(progress_callback, log_callback)
-    return processor.process_video_with_callbacks(video_path, output_dir, organize_by, quality)
+    return processor.process_video_with_callbacks(
+        video_path, output_dir, organize_by, quality,
+        enable_classification, classification_config
+    )
 
 
 # 测试函数

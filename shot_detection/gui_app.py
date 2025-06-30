@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-智能镜头检测与分段系统 - GUI界面
-提供用户友好的图形界面操作
+智能镜头检测与分段系统 - 简化GUI界面
+提供简洁易用的图形界面操作
 """
 
 import sys
@@ -25,32 +25,45 @@ from video_processing_with_callbacks import process_video_with_gui_callbacks
 
 
 class ShotDetectionGUI:
-    """智能镜头检测与分段系统GUI"""
-    
+    """智能镜头检测与分段系统 - 简化版GUI"""
+
     def __init__(self, root):
         self.root = root
         self.root.title("🎬 智能镜头检测与分段系统")
-        self.root.geometry("900x700")
-        self.root.minsize(800, 600)
-        
+        self.root.geometry("700x500")
+        self.root.minsize(600, 400)
+
         # 设置图标和样式
         self.setup_styles()
-        
-        # 变量
+
+        # 核心变量
         self.video_path = tk.StringVar()
         self.output_path = tk.StringVar()
-        self.organize_mode = tk.StringVar(value="duration")
         self.quality_mode = tk.StringVar(value="medium")
+
+        # 简化版本的默认设置
+        self.organize_mode = tk.StringVar(value="duration")
+        self.enable_classification = tk.BooleanVar(value=False)
+        self.move_files = tk.BooleanVar(value=False)
+        self.min_confidence = tk.DoubleVar(value=0.6)
+        self.naming_mode = tk.StringVar(value="preserve-original")
+
+        # 批量处理变量
+        self.batch_input_dir = tk.StringVar()
+        self.batch_output_dir = tk.StringVar()
+        self.batch_quality_mode = tk.StringVar(value="medium")
+        self.batch_recursive = tk.BooleanVar(value=False)
+
         self.processing = False
         self.current_task = None
 
         # 处理状态
         self.processing_status = ProcessingStatus()
         self.progress_monitor = None
-        
+
         # 创建界面
         self.create_widgets()
-        
+
         # 居中窗口
         self.center_window()
     
@@ -117,92 +130,95 @@ class ShotDetectionGUI:
         self.root.geometry(f'{width}x{height}+{x}+{y}')
     
     def create_widgets(self):
-        """创建界面组件"""
-        # 创建主画布和滚动条
-        self.canvas = tk.Canvas(self.root, highlightthickness=0)
-        self.scrollbar = ttk.Scrollbar(self.root, orient="vertical", command=self.canvas.yview)
-        self.scrollable_frame = ttk.Frame(self.canvas)
-
-        # 配置滚动
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-        )
-
-        # 创建画布窗口
-        self.canvas_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-
-        # 布局画布和滚动条
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.scrollbar.pack(side="right", fill="y")
-
-        # 绑定鼠标滚轮事件
-        self.bind_mousewheel()
-
-        # 绑定画布大小变化事件
-        self.canvas.bind('<Configure>', self.on_canvas_configure)
-
-        # 主容器（在可滚动框架内）
-        main_frame = ttk.Frame(self.scrollable_frame, padding="10")
+        """创建带Tab的界面组件"""
+        # 主容器
+        main_frame = ttk.Frame(self.root, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 配置网格权重
-        main_frame.columnconfigure(1, weight=1)
-        
         # 标题
         title_label = ttk.Label(main_frame, text="🎬 智能镜头检测与分段系统", style='Title.TLabel')
-        title_label.grid(row=0, column=0, columnspan=3, pady=(0, 20))
-        
+        title_label.pack(pady=(0, 15))
+
+        # 创建Tab控件
+        self.notebook = ttk.Notebook(main_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        # 单个文件处理Tab
+        self.single_frame = ttk.Frame(self.notebook, padding="15")
+        self.notebook.add(self.single_frame, text="📄 单个文件处理")
+
+        # 批量处理Tab
+        self.batch_frame = ttk.Frame(self.notebook, padding="15")
+        self.notebook.add(self.batch_frame, text="📁 批量处理")
+
+        # 创建单个文件处理界面
+        self.create_single_file_interface()
+
+        # 创建批量处理界面
+        self.create_batch_interface()
+
+        # 创建共享的进度和日志区域
+        self.create_shared_progress_section(main_frame)
+
+
+    def create_single_file_interface(self):
+        """创建单个文件处理界面"""
+        # 配置网格权重
+        self.single_frame.columnconfigure(1, weight=1)
+
         # 文件选择区域
-        self.create_file_selection(main_frame, 1)
-        
-        # 设置区域
-        self.create_settings_section(main_frame, 2)
-        
-        # 视频信息区域
-        self.create_video_info_section(main_frame, 3)
-        
+        self.create_file_selection(self.single_frame, 0)
+
+        # 简化设置区域
+        self.create_simple_settings(self.single_frame, 1)
+
         # 控制按钮区域
-        self.create_control_buttons(main_frame, 4)
-        
-        # 进度和日志区域
-        self.create_progress_section(main_frame, 5)
-        
+        self.create_control_buttons(self.single_frame, 2)
+
         # 结果区域
-        self.create_results_section(main_frame, 6)
+        self.create_results_section(self.single_frame, 3)
 
-    def bind_mousewheel(self):
-        """绑定鼠标滚轮事件"""
-        def _on_mousewheel(event):
-            self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    def create_batch_interface(self):
+        """创建批量处理界面"""
+        # 配置网格权重
+        self.batch_frame.columnconfigure(1, weight=1)
 
-        def _bind_to_mousewheel(event):
-            self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        # 批量文件选择区域
+        self.create_batch_file_selection(self.batch_frame, 0)
 
-        def _unbind_from_mousewheel(event):
-            self.canvas.unbind_all("<MouseWheel>")
+        # 批量设置区域
+        self.create_batch_settings(self.batch_frame, 1)
 
-        # 绑定鼠标进入和离开事件
-        self.canvas.bind('<Enter>', _bind_to_mousewheel)
-        self.canvas.bind('<Leave>', _unbind_from_mousewheel)
+        # 批量控制按钮区域
+        self.create_batch_control_buttons(self.batch_frame, 2)
 
-        # Linux系统的滚轮事件
-        def _on_mousewheel_linux(event):
-            self.canvas.yview_scroll(-1, "units")
+        # 批量结果区域
+        self.create_batch_results_section(self.batch_frame, 3)
 
-        def _on_mousewheel_linux_up(event):
-            self.canvas.yview_scroll(1, "units")
+    def create_shared_progress_section(self, parent):
+        """创建共享的进度和日志区域"""
+        progress_frame = ttk.LabelFrame(parent, text="📊 处理进度", padding="10")
+        progress_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+        progress_frame.columnconfigure(0, weight=1)
+        progress_frame.rowconfigure(2, weight=1)
 
-        self.canvas.bind("<Button-4>", _on_mousewheel_linux_up)
-        self.canvas.bind("<Button-5>", _on_mousewheel_linux)
+        # 进度条
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ttk.Progressbar(progress_frame, variable=self.progress_var, maximum=100, mode='determinate')
+        self.progress_bar.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 5))
 
-    def on_canvas_configure(self, event):
-        """画布大小变化事件"""
-        # 更新滚动区域的宽度以匹配画布宽度
-        canvas_width = event.width
-        self.canvas.itemconfig(self.canvas_window, width=canvas_width)
-    
+        # 进度百分比标签
+        self.progress_percent_label = ttk.Label(progress_frame, text="0%", style='Info.TLabel')
+        self.progress_percent_label.grid(row=0, column=1, padx=(10, 0))
+
+        # 状态标签
+        self.status_label = ttk.Label(progress_frame, text="就绪", style='Info.TLabel')
+        self.status_label.grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(5, 10))
+
+        # 日志文本框（带滚动条）
+        self.log_text = scrolledtext.ScrolledText(progress_frame, height=8, wrap=tk.WORD)
+        self.log_text.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
+
     def create_file_selection(self, parent, row):
         """创建文件选择区域"""
         # 文件选择框架
@@ -219,110 +235,116 @@ class ShotDetectionGUI:
         ttk.Label(file_frame, text="输出目录:").grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(10, 0))
         ttk.Entry(file_frame, textvariable=self.output_path, width=50).grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(0, 10), pady=(10, 0))
         ttk.Button(file_frame, text="浏览", command=self.browse_output_dir).grid(row=1, column=2, pady=(10, 0))
-    
-    def create_settings_section(self, parent, row):
-        """创建设置区域"""
-        settings_frame = ttk.LabelFrame(parent, text="⚙️ 处理设置", padding="10")
-        settings_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
-        
-        # 组织方式
-        ttk.Label(settings_frame, text="分段组织方式:").grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
-        organize_combo = ttk.Combobox(settings_frame, textvariable=self.organize_mode, 
-                                     values=["duration", "quality", "none"], state="readonly", width=15)
-        organize_combo.grid(row=0, column=1, sticky=tk.W, padx=(0, 20))
-        
-        # 质量设置
-        ttk.Label(settings_frame, text="输出质量:").grid(row=0, column=2, sticky=tk.W, padx=(0, 10))
-        quality_combo = ttk.Combobox(settings_frame, textvariable=self.quality_mode,
-                                    values=["low", "medium", "high", "lossless"], state="readonly", width=15)
-        quality_combo.grid(row=0, column=3, sticky=tk.W)
-        
-        # 说明文本
-        info_text = """
-组织方式说明:
-• duration: 按时长分类 (短片段≤5s, 中等5-30s, 长片段>30s)
-• quality: 按检测质量分类 (高/中/低置信度)
-• none: 所有分段放在同一目录
 
-质量设置说明:
-• low: 快速处理，文件较小
-• medium: 平衡质量和大小
-• high: 高质量，文件较大
-• lossless: 无损质量，文件最大
-        """
-        info_label = ttk.Label(settings_frame, text=info_text.strip(), style='Info.TLabel', justify=tk.LEFT)
-        info_label.grid(row=1, column=0, columnspan=4, sticky=(tk.W, tk.E), pady=(10, 0))
+    def create_batch_file_selection(self, parent, row):
+        """创建批量文件选择区域"""
+        # 文件选择框架
+        file_frame = ttk.LabelFrame(parent, text="📁 批量文件选择", padding="10")
+        file_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
+        file_frame.columnconfigure(1, weight=1)
+
+        # 输入目录选择
+        ttk.Label(file_frame, text="输入目录:").grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
+        ttk.Entry(file_frame, textvariable=self.batch_input_dir, width=50).grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 10))
+        ttk.Button(file_frame, text="浏览", command=self.browse_batch_input_dir).grid(row=0, column=2)
+
+        # 输出目录选择
+        ttk.Label(file_frame, text="输出目录:").grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(10, 0))
+        ttk.Entry(file_frame, textvariable=self.batch_output_dir, width=50).grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(0, 10), pady=(10, 0))
+        ttk.Button(file_frame, text="浏览", command=self.browse_batch_output_dir).grid(row=1, column=2, pady=(10, 0))
+
+        # 递归搜索选项
+        ttk.Checkbutton(file_frame, text="包含子目录", variable=self.batch_recursive).grid(row=2, column=0, columnspan=3, sticky=tk.W, pady=(10, 0))
     
-    def create_video_info_section(self, parent, row):
-        """创建视频信息区域"""
-        self.info_frame = ttk.LabelFrame(parent, text="📹 视频信息", padding="10")
-        self.info_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
-        
-        self.video_info_label = ttk.Label(self.info_frame, text="请选择视频文件", style='Info.TLabel')
-        self.video_info_label.grid(row=0, column=0, sticky=tk.W)
+    def create_simple_settings(self, parent, row):
+        """创建简化的设置区域"""
+        settings_frame = ttk.LabelFrame(parent, text="⚙️ 处理设置", padding="10")
+        settings_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 15))
+
+        # 质量设置
+        ttk.Label(settings_frame, text="输出质量:").grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
+        quality_combo = ttk.Combobox(settings_frame, textvariable=self.quality_mode,
+                                    values=["low", "medium", "high"], state="readonly", width=15)
+        quality_combo.grid(row=0, column=1, sticky=tk.W)
+
+        # 简化说明
+        info_text = "• low: 快速处理  • medium: 平衡质量  • high: 高质量"
+        info_label = ttk.Label(settings_frame, text=info_text, style='Info.TLabel')
+        info_label.grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(10, 0))
+
+    def create_batch_settings(self, parent, row):
+        """创建批量设置区域"""
+        settings_frame = ttk.LabelFrame(parent, text="⚙️ 批量处理设置", padding="10")
+        settings_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 15))
+
+        # 质量设置
+        ttk.Label(settings_frame, text="输出质量:").grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
+        batch_quality_combo = ttk.Combobox(settings_frame, textvariable=self.batch_quality_mode,
+                                          values=["low", "medium", "high"], state="readonly", width=15)
+        batch_quality_combo.grid(row=0, column=1, sticky=tk.W)
+
+        # 简化说明
+        info_text = "• low: 快速处理  • medium: 平衡质量  • high: 高质量"
+        info_label = ttk.Label(settings_frame, text=info_text, style='Info.TLabel')
+        info_label.grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(10, 0))
+
+    def create_batch_control_buttons(self, parent, row):
+        """创建批量控制按钮区域"""
+        button_frame = ttk.Frame(parent)
+        button_frame.grid(row=row, column=0, columnspan=3, pady=(0, 15))
+
+        # 开始批量处理按钮
+        self.batch_start_button = ttk.Button(button_frame, text="🚀 开始批量处理", command=self.start_batch_processing)
+        self.batch_start_button.pack(side=tk.LEFT, padx=(0, 15))
+
+        # 停止按钮
+        self.batch_stop_button = ttk.Button(button_frame, text="⏹️ 停止", command=self.stop_processing, state=tk.DISABLED)
+        self.batch_stop_button.pack(side=tk.LEFT, padx=(0, 15))
+
+        # 打开输出目录按钮
+        self.batch_open_output_button = ttk.Button(button_frame, text="📁 打开输出目录",
+                                                  command=self.open_batch_output_directory, state=tk.DISABLED)
+        self.batch_open_output_button.pack(side=tk.LEFT)
+
+    def create_batch_results_section(self, parent, row):
+        """创建批量结果区域"""
+        self.batch_results_frame = ttk.LabelFrame(parent, text="📋 批量处理结果", padding="10")
+        self.batch_results_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E))
+
+        # 结果统计标签
+        self.batch_results_label = ttk.Label(self.batch_results_frame, text="", style='Info.TLabel')
+        self.batch_results_label.grid(row=0, column=0, sticky=(tk.W, tk.E))
+    
+
     
     def create_control_buttons(self, parent, row):
         """创建控制按钮区域"""
         button_frame = ttk.Frame(parent)
-        button_frame.grid(row=row, column=0, columnspan=3, pady=(0, 10))
-        
+        button_frame.grid(row=row, column=0, columnspan=3, pady=(0, 15))
+
         # 开始处理按钮
         self.start_button = ttk.Button(button_frame, text="🚀 开始处理", command=self.start_processing)
-        self.start_button.pack(side=tk.LEFT, padx=(0, 10))
-        
+        self.start_button.pack(side=tk.LEFT, padx=(0, 15))
+
         # 停止按钮
         self.stop_button = ttk.Button(button_frame, text="⏹️ 停止", command=self.stop_processing, state=tk.DISABLED)
-        self.stop_button.pack(side=tk.LEFT, padx=(0, 10))
-        
-        # 清除日志按钮
-        self.clear_button = ttk.Button(button_frame, text="🗑️ 清除日志", command=self.clear_log)
-        self.clear_button.pack(side=tk.LEFT, padx=(0, 10))
-        
+        self.stop_button.pack(side=tk.LEFT, padx=(0, 15))
+
         # 打开输出目录按钮
-        self.open_output_button = ttk.Button(button_frame, text="📁 打开输出目录", 
+        self.open_output_button = ttk.Button(button_frame, text="📁 打开输出目录",
                                            command=self.open_output_directory, state=tk.DISABLED)
         self.open_output_button.pack(side=tk.LEFT)
     
-    def create_progress_section(self, parent, row):
-        """创建进度和日志区域"""
-        progress_frame = ttk.LabelFrame(parent, text="📊 处理进度", padding="10")
-        progress_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
-        progress_frame.columnconfigure(0, weight=1)
-        progress_frame.rowconfigure(1, weight=1)
-        
-        # 进度条
-        self.progress_var = tk.DoubleVar()
-        self.progress_bar = ttk.Progressbar(progress_frame, variable=self.progress_var, maximum=100)
-        self.progress_bar.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-        
-        # 状态标签
-        self.status_label = ttk.Label(progress_frame, text="就绪", style='Info.TLabel')
-        self.status_label.grid(row=0, column=1, padx=(10, 0))
-        
-        # 日志文本框
-        self.log_text = scrolledtext.ScrolledText(progress_frame, height=12, wrap=tk.WORD)
-        self.log_text.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
-        # 配置行权重
-        parent.rowconfigure(row, weight=1)
+
     
     def create_results_section(self, parent, row):
         """创建结果区域"""
         self.results_frame = ttk.LabelFrame(parent, text="📋 处理结果", padding="10")
-        self.results_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
-        self.results_frame.columnconfigure(1, weight=1)
-        
-        # 结果按钮（初始隐藏）
-        self.view_report_button = ttk.Button(self.results_frame, text="📊 查看分析报告", 
-                                           command=self.view_analysis_report)
-        self.view_segments_button = ttk.Button(self.results_frame, text="🎬 查看视频分段", 
-                                             command=self.view_video_segments)
-        self.view_projects_button = ttk.Button(self.results_frame, text="📤 查看项目文件", 
-                                             command=self.view_project_files)
-        
+        self.results_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E))
+
         # 结果统计标签
         self.results_label = ttk.Label(self.results_frame, text="", style='Info.TLabel')
-        self.results_label.grid(row=0, column=0, columnspan=3, sticky=(tk.W, tk.E))
+        self.results_label.grid(row=0, column=0, sticky=(tk.W, tk.E))
     
     def browse_video_file(self):
         """浏览视频文件"""
@@ -353,34 +375,38 @@ class ShotDetectionGUI:
         dirname = filedialog.askdirectory(title="选择输出目录")
         if dirname:
             self.output_path.set(dirname)
+
+    def browse_batch_input_dir(self):
+        """浏览批量输入目录"""
+        dirname = filedialog.askdirectory(title="选择批量输入目录")
+        if dirname:
+            self.batch_input_dir.set(dirname)
+
+            # 自动设置输出目录
+            if not self.batch_output_dir.get():
+                default_output = Path(dirname).parent / f"{Path(dirname).name}_batch_segments"
+                self.batch_output_dir.set(str(default_output))
+
+    def browse_batch_output_dir(self):
+        """浏览批量输出目录"""
+        dirname = filedialog.askdirectory(title="选择批量输出目录")
+        if dirname:
+            self.batch_output_dir.set(dirname)
     
     def update_video_info(self):
-        """更新视频信息显示"""
+        """更新视频信息显示（简化版）"""
         video_file = self.video_path.get()
-        
-        if not video_file or not os.path.exists(video_file):
-            self.video_info_label.config(text="请选择有效的视频文件")
-            return
-        
-        try:
-            if validate_video_file(video_file):
-                info = get_basic_video_info(video_file)
-                
-                info_text = f"""
-文件名: {Path(video_file).name}
-时长: {format_duration(info['duration'])}
-分辨率: {info['width']}x{info['height']}
-帧率: {info['fps']:.1f} FPS
-文件大小: {format_file_size(info['file_size'])}
-                """.strip()
-                
-                self.video_info_label.config(text=info_text)
-            else:
-                self.video_info_label.config(text="无效的视频文件格式")
-                
-        except Exception as e:
-            self.video_info_label.config(text=f"读取视频信息失败: {e}")
-    
+
+        if video_file and os.path.exists(video_file):
+            try:
+                if validate_video_file(video_file):
+                    info = get_basic_video_info(video_file)
+                    self.log_message(f"已选择视频: {Path(video_file).name} ({format_duration(info['duration'])})", "INFO")
+                else:
+                    self.log_message("无效的视频文件格式", "ERROR")
+            except Exception as e:
+                self.log_message(f"读取视频信息失败: {e}", "ERROR")
+
     def log_message(self, message, level="INFO"):
         """添加日志消息（线程安全）"""
         def _update_log():
@@ -402,10 +428,6 @@ class ShotDetectionGUI:
         else:
             self.root.after(0, _update_log)
     
-    def clear_log(self):
-        """清除日志"""
-        self.log_text.delete(1.0, tk.END)
-    
     def validate_inputs(self):
         """验证输入参数"""
         if not self.video_path.get():
@@ -424,6 +446,22 @@ class ShotDetectionGUI:
             messagebox.showerror("错误", "请选择输出目录")
             return False
         
+        return True
+
+    def validate_batch_inputs(self):
+        """验证批量处理输入参数"""
+        if not self.batch_input_dir.get():
+            messagebox.showerror("错误", "请选择批量输入目录")
+            return False
+
+        if not os.path.exists(self.batch_input_dir.get()):
+            messagebox.showerror("错误", "批量输入目录不存在")
+            return False
+
+        if not self.batch_output_dir.get():
+            messagebox.showerror("错误", "请选择批量输出目录")
+            return False
+
         return True
 
     def start_processing(self):
@@ -474,8 +512,29 @@ class ShotDetectionGUI:
             self.log_message(f"组织方式: {self.organize_mode.get()}", "INFO")
             self.log_message(f"输出质量: {self.quality_mode.get()}", "INFO")
 
+            # 归类功能信息
+            if self.enable_classification.get():
+                self.log_message("🗂️ 自动归类功能: 启用", "INFO")
+                self.log_message(f"文件操作: {'移动' if self.move_files.get() else '复制'}", "INFO")
+                self.log_message(f"最小置信度: {self.min_confidence.get():.2f}", "INFO")
+                self.log_message(f"命名模式: {self.naming_mode.get()}", "INFO")
+            else:
+                self.log_message("🗂️ 自动归类功能: 禁用", "INFO")
+
             # 开始处理步骤
             self.progress_monitor.next_step("开始处理...")
+
+            # 准备归类配置
+            classification_config = None
+            if self.enable_classification.get():
+                classification_config = {
+                    'move_files': self.move_files.get(),
+                    'min_confidence_for_move': self.min_confidence.get(),
+                    'naming_mode': self.naming_mode.get(),
+                    'create_directories': True,
+                    'conflict_resolution': 'rename',
+                    'create_backup': False
+                }
 
             # 执行处理（使用带回调的版本）
             success = process_video_with_gui_callbacks(
@@ -484,7 +543,9 @@ class ShotDetectionGUI:
                 self.organize_mode.get(),
                 self.quality_mode.get(),
                 progress_callback=self.update_progress,
-                log_callback=self.log_message
+                log_callback=self.log_message,
+                enable_classification=self.enable_classification.get(),
+                classification_config=classification_config
             )
 
             # 完成进度
@@ -514,9 +575,21 @@ class ShotDetectionGUI:
     def update_progress(self, progress: float, description: str):
         """更新进度回调（线程安全）"""
         def _update_gui():
-            self.progress_var.set(progress)
+            # 确保进度值在有效范围内
+            progress_value = max(0, min(100, progress))
+            self.progress_var.set(progress_value)
+
+            # 更新百分比标签
+            if hasattr(self, 'progress_percent_label'):
+                self.progress_percent_label.config(text=f"{progress_value:.1f}%")
+
+            # 更新状态标签
             self.status_label.config(text=description)
-            self.processing_status.update_phase(description)
+
+            # 更新处理状态（如果存在）
+            if hasattr(self, 'processing_status'):
+                self.processing_status.update_phase(description)
+
             # 强制更新界面
             self.root.update_idletasks()
 
@@ -525,6 +598,14 @@ class ShotDetectionGUI:
             _update_gui()
         else:
             self.root.after(0, _update_gui)
+
+    def update_batch_progress(self, current_file: int, total_files: int, file_name: str, file_progress: float = 0):
+        """更新批量处理进度"""
+        # 计算总体进度：文件进度 + 当前文件内部进度
+        overall_progress = ((current_file - 1) / total_files) * 100 + (file_progress / total_files)
+        description = f"处理文件 {current_file}/{total_files}: {file_name}"
+
+        self.update_progress(overall_progress, description)
 
     def stop_processing(self):
         """停止处理"""
@@ -559,17 +640,14 @@ class ShotDetectionGUI:
         self.current_task = None
 
     def show_result_buttons(self):
-        """显示结果按钮"""
-        self.view_report_button.grid(row=1, column=0, padx=(0, 10), pady=(10, 0))
-        self.view_segments_button.grid(row=1, column=1, padx=(0, 10), pady=(10, 0))
-        self.view_projects_button.grid(row=1, column=2, pady=(10, 0))
+        """显示结果按钮（简化版本 - 仅更新标签）"""
+        if hasattr(self, 'results_label'):
+            self.results_label.config(text="处理完成！请查看输出目录。")
 
     def hide_result_buttons(self):
-        """隐藏结果按钮"""
-        self.view_report_button.grid_remove()
-        self.view_segments_button.grid_remove()
-        self.view_projects_button.grid_remove()
-        self.results_label.config(text="")
+        """隐藏结果按钮（简化版本 - 仅清空标签）"""
+        if hasattr(self, 'results_label'):
+            self.results_label.config(text="")
 
     def show_processing_results(self):
         """显示处理结果统计"""
@@ -881,6 +959,149 @@ class ShotDetectionGUI:
     def open_output_directory(self):
         """打开输出目录"""
         self.view_video_segments()
+
+    def start_batch_processing(self):
+        """开始批量处理"""
+        if self.processing:
+            messagebox.showwarning("警告", "正在处理中，请等待完成")
+            return
+
+        if not self.validate_batch_inputs():
+            return
+
+        # 更新界面状态
+        self.processing = True
+        self.batch_start_button.config(state=tk.DISABLED)
+        self.batch_stop_button.config(state=tk.NORMAL)
+        self.batch_open_output_button.config(state=tk.DISABLED)
+        self.status_label.config(text="正在批量处理...")
+        self.progress_var.set(0)
+
+        # 在新线程中执行批量处理
+        self.current_task = threading.Thread(target=self._batch_processing_worker, daemon=True)
+        self.current_task.start()
+
+    def _batch_processing_worker(self):
+        """批量处理工作线程"""
+        try:
+            input_dir = Path(self.batch_input_dir.get())
+            output_dir = Path(self.batch_output_dir.get())
+            quality = self.batch_quality_mode.get()
+            recursive = self.batch_recursive.get()
+
+            # 查找所有视频文件
+            video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm', '.m4v']
+            video_files = []
+
+            if recursive:
+                for ext in video_extensions:
+                    video_files.extend(input_dir.rglob(f"*{ext}"))
+                    video_files.extend(input_dir.rglob(f"*{ext.upper()}"))
+            else:
+                for ext in video_extensions:
+                    video_files.extend(input_dir.glob(f"*{ext}"))
+                    video_files.extend(input_dir.glob(f"*{ext.upper()}"))
+
+            if not video_files:
+                self.log_message("未找到视频文件", "WARNING")
+                self._finish_batch_processing()
+                return
+
+            self.log_message(f"找到 {len(video_files)} 个视频文件，开始批量处理...", "INFO")
+
+            success_count = 0
+            total_files = len(video_files)
+
+            for i, video_file in enumerate(video_files):
+                if not self.processing:  # 检查是否被停止
+                    break
+
+                try:
+                    # 更新批量处理进度
+                    current_file_num = i + 1
+                    self.root.after(0, lambda: self.update_batch_progress(
+                        current_file_num, total_files, video_file.name, 0
+                    ))
+
+                    # 创建输出目录
+                    relative_path = video_file.relative_to(input_dir)
+                    video_output_dir = output_dir / relative_path.parent / f"{relative_path.stem}_segments"
+                    video_output_dir.mkdir(parents=True, exist_ok=True)
+
+                    self.log_message(f"处理文件 {current_file_num}/{total_files}: {video_file.name}", "INFO")
+
+                    # 创建单个文件的进度回调
+                    def file_progress_callback(progress, description):
+                        self.root.after(0, lambda: self.update_batch_progress(
+                            current_file_num, total_files, video_file.name, progress
+                        ))
+
+                    # 处理单个视频文件
+                    success = process_video_with_gui_callbacks(
+                        str(video_file),
+                        str(video_output_dir),
+                        "duration",  # 默认按时长组织
+                        quality,
+                        progress_callback=file_progress_callback,  # 传递进度回调
+                        log_callback=self.log_message,
+                        enable_classification=False,
+                        classification_config=None
+                    )
+
+                    if success:
+                        success_count += 1
+                        self.log_message(f"✅ {video_file.name} 处理完成", "SUCCESS")
+                    else:
+                        self.log_message(f"❌ {video_file.name} 处理失败", "ERROR")
+
+                except Exception as e:
+                    self.log_message(f"❌ {video_file.name} 处理出错: {e}", "ERROR")
+
+            # 完成处理
+            self.log_message(f"批量处理完成！成功处理 {success_count}/{total_files} 个文件", "SUCCESS")
+
+            # 更新批量结果显示
+            if hasattr(self, 'batch_results_label'):
+                result_text = f"批量处理完成！成功: {success_count}, 失败: {total_files - success_count}, 总计: {total_files}"
+                self.root.after(0, lambda: self.batch_results_label.config(text=result_text))
+
+        except Exception as e:
+            self.log_message(f"批量处理出错: {e}", "ERROR")
+        finally:
+            self.root.after(0, self._finish_batch_processing)
+
+    def _finish_batch_processing(self):
+        """完成批量处理"""
+        self.processing = False
+        self.batch_start_button.config(state=tk.NORMAL)
+        self.batch_stop_button.config(state=tk.DISABLED)
+        self.batch_open_output_button.config(state=tk.NORMAL)
+
+        # 更新进度显示
+        self.progress_var.set(100)
+        if hasattr(self, 'progress_percent_label'):
+            self.progress_percent_label.config(text="100.0%")
+        self.status_label.config(text="批量处理完成")
+
+        # 显示完成消息
+        messagebox.showinfo("完成", "批量处理完成！请查看日志了解详细结果。")
+
+    def open_batch_output_directory(self):
+        """打开批量输出目录"""
+        output_dir = self.batch_output_dir.get()
+        if not output_dir or not os.path.exists(output_dir):
+            messagebox.showwarning("警告", "输出目录不存在")
+            return
+
+        try:
+            if sys.platform == "win32":
+                os.startfile(str(output_dir))
+            elif sys.platform == "darwin":
+                subprocess.run(["open", str(output_dir)], check=True)
+            else:
+                subprocess.run(["xdg-open", str(output_dir)], check=True)
+        except Exception as e:
+            messagebox.showerror("错误", f"无法打开输出目录: {e}")
 
 
 def main():

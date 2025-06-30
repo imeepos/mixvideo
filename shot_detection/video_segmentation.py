@@ -23,6 +23,8 @@ from processors.video_processor import VideoProcessor, VideoSegment
 from exporters.project_exporter import ProjectExporter
 from utils.video_utils import validate_video_file, get_basic_video_info
 from utils.report_generator import ReportGenerator
+from classification_config import get_classification_manager
+from file_organizer import create_file_organizer
 from loguru import logger
 
 
@@ -234,9 +236,11 @@ def organize_segments_by_quality(segments: List[VideoSegment],
     return categories
 
 
-def process_video_segmentation(video_path: str, output_dir: str = None, 
-                             organize_by: str = "duration", 
-                             quality: str = "medium") -> bool:
+def process_video_segmentation(video_path: str, output_dir: str = None,
+                             organize_by: str = "duration",
+                             quality: str = "medium",
+                             enable_classification: bool = False,
+                             classification_config: dict = None) -> bool:
     """完整的视频分段处理流程"""
     
     logger.info("🎬 开始视频自动分段和切分")
@@ -265,7 +269,31 @@ def process_video_segmentation(video_path: str, output_dir: str = None,
     try:
         # 4. 加载配置
         config = load_config("config.yaml")
-        
+
+        # 4.1. 初始化归类管理器
+        classification_manager = get_classification_manager()
+        file_organizer = None
+
+        if enable_classification:
+            logger.info("🗂️ 启用自动归类功能")
+
+            # 更新归类配置
+            if classification_config:
+                classification_manager.update_config(**classification_config)
+
+            # 设置归类模式
+            classification_manager.update_config(
+                enable_classification=True,
+                classification_mode=organize_by,
+                base_output_dir=str(output_dir)
+            )
+
+            # 创建文件组织器
+            file_organizer = create_file_organizer(classification_manager)
+
+            logger.info(f"归类模式: {organize_by}")
+            logger.info(f"输出目录: {output_dir}")
+
         # 5. 初始化检测器
         logger.info("🤖 初始化镜头检测算法...")
         multi_detector = MultiDetector()
@@ -351,6 +379,29 @@ def process_video_segmentation(video_path: str, output_dir: str = None,
                 
                 if create_segment_with_ffmpeg(video_path, segment, quality):
                     success_count += 1
+
+                    # 如果启用归类，进行自动归类
+                    if enable_classification and file_organizer:
+                        segment_info = {
+                            'duration': segment.duration,
+                            'confidence': segment.metadata.get('boundary_confidence', 1.0),
+                            'start_time': segment.start_time,
+                            'end_time': segment.end_time,
+                            'category': category,
+                            'content_description': f"segment_{segment.index}"
+                        }
+
+                        # 执行归类
+                        organize_result = file_organizer.organize_segment(
+                            segment.file_path,
+                            segment_info,
+                            str(output_path)
+                        )
+
+                        if organize_result.success:
+                            logger.info(f"  📁 归类成功: {organize_result.category} -> {organize_result.new_path}")
+                        else:
+                            logger.warning(f"  ⚠️ 归类失败: {organize_result.error}")
                 else:
                     logger.error(f"  ❌ 切分失败")
         
@@ -377,6 +428,24 @@ def process_video_segmentation(video_path: str, output_dir: str = None,
         logger.info(f"  成功切分: {success_count}")
         logger.info(f"  失败数量: {total_segments - success_count}")
         logger.info(f"  成功率: {success_count/total_segments*100:.1f}%")
+
+        # 显示归类统计
+        if enable_classification and file_organizer:
+            organize_summary = file_organizer.get_operation_summary()
+            logger.info("📁 归类统计:")
+            logger.info(f"  归类总数: {organize_summary['total']}")
+            logger.info(f"  归类成功: {organize_summary['success']}")
+            logger.info(f"  归类失败: {organize_summary['failed']}")
+
+            if organize_summary['categories']:
+                logger.info("  分类分布:")
+                for cat, count in organize_summary['categories'].items():
+                    logger.info(f"    {cat}: {count} 个")
+
+            if organize_summary['operations']:
+                logger.info("  操作统计:")
+                for op, count in organize_summary['operations'].items():
+                    logger.info(f"    {op}: {count} 个")
         
         logger.info("📁 输出目录结构:")
         for root, dirs, files in os.walk(output_path):
@@ -407,10 +476,13 @@ def main():
     parser = argparse.ArgumentParser(description="视频自动分段和切分系统")
     parser.add_argument("video", help="输入视频文件路径")
     parser.add_argument("-o", "--output", help="输出目录路径")
-    parser.add_argument("--organize", choices=["duration", "quality", "none"], 
+    parser.add_argument("--organize", choices=["duration", "quality", "content", "none"],
                        default="duration", help="分段组织方式")
-    parser.add_argument("--quality", choices=["low", "medium", "high", "lossless"], 
+    parser.add_argument("--quality", choices=["low", "medium", "high", "lossless"],
                        default="medium", help="输出视频质量")
+    parser.add_argument("--classify", action="store_true", help="启用自动归类功能")
+    parser.add_argument("--move-files", action="store_true", help="移动文件而不是复制")
+    parser.add_argument("--min-confidence", type=float, default=0.6, help="归类最小置信度")
     parser.add_argument("--debug", action="store_true", help="启用调试模式")
     
     args = parser.parse_args()
@@ -421,11 +493,23 @@ def main():
         logger.remove()
         logger.add(sys.stderr, level="DEBUG")
     
+    # 准备归类配置
+    classification_config = None
+    if args.classify:
+        classification_config = {
+            'move_files': args.move_files,
+            'min_confidence_for_move': args.min_confidence,
+            'create_directories': True,
+            'conflict_resolution': 'rename'
+        }
+
     success = process_video_segmentation(
-        args.video, 
-        args.output, 
-        args.organize, 
-        args.quality
+        args.video,
+        args.output,
+        args.organize,
+        args.quality,
+        args.classify,
+        classification_config
     )
     
     sys.exit(0 if success else 1)

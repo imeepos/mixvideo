@@ -115,34 +115,89 @@ class QualityConfig:
 @dataclass
 class SystemConfig:
     """系统配置"""
-    
+
     # 日志配置
     log_level: str = 'INFO'
     log_file: str = 'shot_detection.log'
     log_rotation: str = '10 MB'
     log_retention: str = '30 days'
-    
+
     # 调试配置
     debug_mode: bool = False
     save_debug_frames: bool = False
     debug_output_dir: str = 'debug'
-    
+
     # 监控配置
     enable_monitoring: bool = True
     metrics_port: int = 8080
     health_check_interval: int = 30
 
 
+@dataclass
+class ClassificationIntegrationConfig:
+    """归类功能集成配置"""
+
+    # 归类功能开关
+    enable_classification: bool = False
+
+    # 归类模式
+    classification_mode: str = "duration"  # duration, quality, content, custom
+
+    # 置信度阈值
+    min_confidence_for_move: float = 0.6
+
+    # 文件操作配置
+    move_files: bool = False  # False=复制，True=移动
+    create_directories: bool = True
+    conflict_resolution: str = "rename"  # skip, overwrite, rename
+    create_backup: bool = False
+
+    # 命名模式
+    naming_mode: str = "preserve-original"  # preserve-original, smart, content-based, timestamp
+
+    # 目录结构
+    base_output_dir: str = "classified_segments"
+
+    # 时长分类阈值（秒）
+    duration_thresholds: Dict[str, Tuple[float, float]] = field(default_factory=lambda: {
+        "short": (0.0, 5.0),
+        "medium": (5.0, 30.0),
+        "long": (30.0, float('inf'))
+    })
+
+    # 质量分类阈值（置信度）
+    quality_thresholds: Dict[str, Tuple[float, float]] = field(default_factory=lambda: {
+        "low": (0.0, 0.4),
+        "medium": (0.4, 0.7),
+        "high": (0.7, 1.0)
+    })
+
+    # 内容分类类别
+    content_categories: List[str] = field(default_factory=lambda: [
+        "action", "dialogue", "landscape", "closeup", "transition", "other"
+    ])
+
+    # 性能配置
+    max_concurrent_operations: int = 4
+    enable_parallel_processing: bool = True
+
+    # 报告配置
+    generate_classification_report: bool = True
+    include_confidence_scores: bool = True
+    save_operation_history: bool = True
+
+
 class ConfigManager:
     """配置管理器"""
-    
+
     def __init__(self, config_file: Optional[str] = None):
         self.detection = DetectionConfig()
         self.processing = ProcessingConfig()
         self.output = OutputConfig()
         self.quality = QualityConfig()
         self.system = SystemConfig()
-        
+        self.classification = ClassificationIntegrationConfig()  # 新增归类配置
+
         if config_file and os.path.exists(config_file):
             self.load_from_file(config_file)
     

@@ -31,11 +31,14 @@ def create_complete_python_distribution():
     # 主要Python文件
     python_files = [
         "run_gui.py",  # 修改：集成自动检查和安装
-        "gui_app.py",
+        "gui_app.py",  # 修改：集成归类功能界面
         "gui_logger.py",  # 重要：包含GUI日志模块
-        "config.py",
-        "video_segmentation.py",  # 修改：智能FFmpeg查找
-        "video_processing_with_callbacks.py",
+        "config.py",  # 修改：添加归类配置
+        "video_segmentation.py",  # 修改：智能FFmpeg查找 + 归类功能
+        "video_processing_with_callbacks.py",  # 修改：支持归类参数
+        "classification_config.py",  # 新增：归类配置管理
+        "file_organizer.py",  # 新增：文件组织器
+        "test_classification.py",  # 新增：归类功能测试
         "font_config.py",
         "build_windows_executable.py",
         "test_tkinter.py",  # tkinter测试工具
@@ -65,11 +68,13 @@ def create_complete_python_distribution():
             print(f"⚠️ 目录不存在: {dir_name}")
     
     # 复制配置文件
-    config_files = ["config.yaml", "font_config.ini"]
+    config_files = ["config.yaml", "font_config.ini", "classification_config.yaml"]
     for file in config_files:
         if Path(file).exists():
             shutil.copy2(file, release_dir / file)
             print(f"✅ {file}")
+        else:
+            print(f"⚠️ 配置文件不存在: {file}")
     
     # 复制其他文件
     other_files = ["README.md", "icon.ico", "test_video.mp4"]
@@ -445,6 +450,9 @@ Solution: The application will auto-detect fonts, but you can:
 - Multiple export formats
 - Chinese GUI with font auto-detection
 - Comprehensive analysis reports
+- Smart video segment classification (NEW)
+- Automatic file organization by duration/quality/content (NEW)
+- Configurable classification rules and thresholds (NEW)
 
 === SUPPORT ===
 For additional help, check the README.md file or run the dependency checker.
@@ -483,11 +491,14 @@ For additional help, check the README.md file or run the dependency checker.
     
     print(f"\n📋 包含内容:")
     print(f"✅ 完整Python源码（包含gui_logger.py）")
+    print(f"✅ 智能视频分段归类功能（新增）")
+    print(f"✅ 文件组织器和归类配置管理（新增）")
     print(f"✅ 所有必要的模块和目录")
     print(f"✅ 增强的启动脚本（Windows + Linux）")
     print(f"✅ 依赖检查工具")
     print(f"✅ 完整的安装指南")
     print(f"✅ 自动错误诊断和修复")
+    print(f"✅ 归类功能测试脚本（新增）")
     
     return release_dir, zip_name
 

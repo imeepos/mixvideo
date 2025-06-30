@@ -1,0 +1,163 @@
+# 智能镜头检测与分段系统 - 自动归类配置
+# 参考video-analyzer实现的归类功能配置
+
+classification:
+  # 归类功能开关
+  enable_classification: false
+  
+  # 归类模式
+  # duration: 按时长分类
+  # quality: 按检测质量分类  
+  # content: 按内容分类
+  # custom: 自定义规则分类
+  classification_mode: "duration"
+  
+  # 置信度阈值 (0.0-1.0)
+  min_confidence_for_move: 0.6
+  
+  # 文件操作配置
+  file_operations:
+    move_files: false  # false=复制文件，true=移动文件
+    create_directories: true  # 自动创建目录
+    conflict_resolution: "rename"  # skip, overwrite, rename
+    create_backup: false  # 是否创建备份
+    backup_directory: "./backup"
+  
+  # 命名模式
+  # preserve-original: 保持原始文件名
+  # smart: 智能命名（添加分类和时长信息）
+  # content-based: 基于内容的命名
+  # timestamp: 时间戳命名
+  naming_mode: "preserve-original"
+  
+  # 目录结构配置
+  base_output_dir: "classified_segments"
+  
+  # 时长分类配置 (秒)
+  duration_thresholds:
+    short:
+      min: 0.0
+      max: 5.0
+      description: "短片段 (≤5秒)"
+    medium:
+      min: 5.0
+      max: 30.0
+      description: "中等片段 (5-30秒)"
+    long:
+      min: 30.0
+      max: .inf
+      description: "长片段 (>30秒)"
+  
+  # 质量分类配置 (置信度)
+  quality_thresholds:
+    low:
+      min: 0.0
+      max: 0.4
+      description: "低质量检测"
+    medium:
+      min: 0.4
+      max: 0.7
+      description: "中等质量检测"
+    high:
+      min: 0.7
+      max: 1.0
+      description: "高质量检测"
+  
+  # 内容分类配置
+  content_categories:
+    - name: "action"
+      description: "动作场景"
+      keywords: ["运动", "快速", "动作"]
+    - name: "dialogue"
+      description: "对话场景"
+      keywords: ["对话", "说话", "交谈"]
+    - name: "landscape"
+      description: "风景场景"
+      keywords: ["风景", "自然", "户外"]
+    - name: "closeup"
+      description: "特写场景"
+      keywords: ["特写", "近景", "面部"]
+    - name: "transition"
+      description: "转场场景"
+      keywords: ["转场", "过渡", "切换"]
+    - name: "other"
+      description: "其他场景"
+      keywords: []
+  
+  # 自定义分类规则
+  custom_rules:
+    - name: "very_short"
+      description: "极短片段"
+      conditions:
+        duration_max: 2.0
+      category: "very_short"
+      enabled: false
+    
+    - name: "high_confidence_long"
+      description: "高置信度长片段"
+      conditions:
+        duration_min: 20.0
+        confidence_min: 0.8
+      category: "premium"
+      enabled: false
+
+# 文件夹匹配配置 (参考video-analyzer)
+folder_matching:
+  # 基础扫描目录
+  base_directory: ""
+  
+  # 扫描深度
+  max_depth: 3
+  
+  # 最小匹配置信度
+  min_confidence: 0.3
+  
+  # 最大匹配数量
+  max_matches: 5
+  
+  # 启用语义分析
+  enable_semantic_analysis: false
+  
+  # 文件夹匹配规则
+  matching_rules:
+    - pattern: "*short*"
+      category: "short"
+      weight: 0.8
+    - pattern: "*long*"
+      category: "long"
+      weight: 0.8
+    - pattern: "*action*"
+      category: "action"
+      weight: 0.7
+    - pattern: "*dialogue*"
+      category: "dialogue"
+      weight: 0.7
+
+# 高级配置
+advanced:
+  # 并发处理
+  max_concurrent_operations: 4
+  
+  # 进度报告间隔 (秒)
+  progress_report_interval: 1.0
+  
+  # 日志级别
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  
+  # 性能优化
+  performance:
+    enable_caching: true
+    cache_size_mb: 100
+    enable_parallel_processing: true
+  
+  # 错误处理
+  error_handling:
+    max_retries: 3
+    retry_delay: 1.0
+    continue_on_error: true
+    
+  # 统计和报告
+  reporting:
+    generate_classification_report: true
+    include_confidence_scores: true
+    save_operation_history: true
