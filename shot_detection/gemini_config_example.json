@@ -1,9 +1,0 @@
-{
-  "cloudflare_project_id": "your_cloudflare_project_id_here",
-  "cloudflare_gateway_id": "your_cloudflare_gateway_id_here",
-  "google_project_id": "your_google_project_id_here",
-  "analysis_model": "gemini-2.5-flash",
-  "enable_cache": true,
-  "cache_dir": ".cache/gemini_analysis",
-  "selected_regions": "us-central1,us-east1,europe-west1"
-}
