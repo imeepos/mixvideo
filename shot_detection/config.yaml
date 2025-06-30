@@ -1,0 +1,117 @@
+# 智能镜头检测与分段系统配置文件
+
+# 检测算法配置
+detection:
+  # 帧差分析配置
+  frame_diff_threshold: 0.3
+  frame_diff_min_scene_len: 15
+  
+  # 直方图检测配置
+  histogram_threshold: 0.4
+  histogram_bins: 256
+  
+  # 光流分析配置
+  optical_flow_threshold: 0.5
+  optical_flow_max_features: 1000
+  
+  # 深度学习检测配置
+  dl_model_path: "models/shot_detection_model.pth"
+  dl_confidence_threshold: 0.8
+  dl_batch_size: 32
+  
+  # 融合算法配置
+  fusion_weights:
+    frame_diff: 0.4
+    histogram: 0.4
+    optical_flow: 0.1
+    deep_learning: 0.1
+  fusion_threshold: 0.6
+
+# 视频处理配置
+processing:
+  # 支持的输入格式
+  input_formats:
+    - ".mp4"
+    - ".avi"
+    - ".mov"
+    - ".mkv"
+    - ".wmv"
+    - ".flv"
+    - ".webm"
+    - ".m4v"
+  
+  # 输出格式
+  output_format: "mp4"
+  
+  # 处理参数
+  target_fps: null  # null表示保持原始帧率
+  target_resolution: null  # null表示保持原始分辨率
+  quality_preset: "medium"  # low, medium, high, lossless
+  
+  # 性能配置
+  max_workers: 8
+  chunk_size: 1000
+  memory_limit_gb: 4.0
+  use_gpu: true
+  gpu_device: "cuda:0"
+  
+  # 缓存配置
+  enable_cache: true
+  cache_dir: ".cache"
+  cache_max_size_gb: 10.0
+
+# 输出配置
+output:
+  # 分段输出配置
+  segment_naming_pattern: "{basename}_segment_{index:03d}.{ext}"
+  include_metadata: true
+  preserve_audio: true
+  
+  # 项目文件生成
+  generate_premiere_xml: true
+  generate_final_cut_xml: true
+  generate_edl: true
+  generate_aaf: false
+  
+  # 报告生成
+  generate_html_report: true
+  generate_json_report: true
+  generate_csv_report: true
+  
+  # 时间码格式
+  timecode_format: "SMPTE"  # SMPTE, frames, seconds
+  timecode_fps: 25
+
+# 质量控制配置
+quality:
+  # 检测质量指标
+  min_accuracy: 0.95
+  max_false_positive_rate: 0.05
+  max_false_negative_rate: 0.03
+  
+  # 处理质量指标
+  max_processing_time_ratio: 0.1
+  min_segment_duration: 1.0
+  max_segment_duration: 300.0
+  
+  # 输出质量指标
+  min_metadata_accuracy: 0.98
+  required_format_compatibility: 1.0
+
+# 系统配置
+system:
+  # 日志配置
+  log_level: "INFO"
+  log_file: "shot_detection.log"
+  log_rotation: "10 MB"
+  log_retention: "30 days"
+  
+  # 调试配置
+  debug_mode: false
+  save_debug_frames: false
+  debug_output_dir: "debug"
+  
+  # 监控配置
+  enable_monitoring: true
+  metrics_port: 8080
+  health_check_interval: 30

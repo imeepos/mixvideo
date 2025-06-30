@@ -14,6 +14,16 @@ resources
 .video-upload-cache
 
 outputs
+venv
+test_output
+video_segments
+demo_duration
+demo_quality
+batch_demo_output
+video_segments_quality
+demo_lossless
+demo_fast
+*.mp4
 
 # Environment variables
 .env
