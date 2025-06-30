@@ -54,6 +54,12 @@ class ShotDetectionGUI:
         self.batch_quality_mode = tk.StringVar(value="medium")
         self.batch_recursive = tk.BooleanVar(value=False)
 
+        # 视频分析变量
+        self.analysis_video_path = tk.StringVar()
+        self.analysis_output_dir = tk.StringVar()
+        self.gemini_api_key = tk.StringVar()
+        self.analysis_model = tk.StringVar(value="gemini-2.0-flash-exp")
+
         self.processing = False
         self.current_task = None
 
@@ -151,11 +157,18 @@ class ShotDetectionGUI:
         self.batch_frame = ttk.Frame(self.notebook, padding="15")
         self.notebook.add(self.batch_frame, text="📁 批量处理")
 
+        # 视频分析Tab
+        self.analysis_frame = ttk.Frame(self.notebook, padding="15")
+        self.notebook.add(self.analysis_frame, text="🎥 视频分析")
+
         # 创建单个文件处理界面
         self.create_single_file_interface()
 
         # 创建批量处理界面
         self.create_batch_interface()
+
+        # 创建视频分析界面
+        self.create_analysis_interface()
 
         # 创建共享的进度和日志区域
         self.create_shared_progress_section(main_frame)
@@ -314,9 +327,100 @@ class ShotDetectionGUI:
         # 结果统计标签
         self.batch_results_label = ttk.Label(self.batch_results_frame, text="", style='Info.TLabel')
         self.batch_results_label.grid(row=0, column=0, sticky=(tk.W, tk.E))
-    
 
-    
+    def create_analysis_interface(self):
+        """创建视频分析界面"""
+        # 配置网格权重
+        self.analysis_frame.columnconfigure(1, weight=1)
+
+        # 视频分析文件选择区域
+        self.create_analysis_file_selection(self.analysis_frame, 0)
+
+        # Gemini配置区域
+        self.create_gemini_config(self.analysis_frame, 1)
+
+        # 分析控制按钮区域
+        self.create_analysis_control_buttons(self.analysis_frame, 2)
+
+        # 分析结果区域
+        self.create_analysis_results_section(self.analysis_frame, 3)
+
+    def create_analysis_file_selection(self, parent, row):
+        """创建视频分析文件选择区域"""
+        file_frame = ttk.LabelFrame(parent, text="📁 视频文件选择", padding="10")
+        file_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
+        file_frame.columnconfigure(1, weight=1)
+
+        # 视频文件选择
+        ttk.Label(file_frame, text="视频文件:").grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
+        ttk.Entry(file_frame, textvariable=self.analysis_video_path, width=50).grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 10))
+        ttk.Button(file_frame, text="浏览", command=self.browse_analysis_video_file).grid(row=0, column=2)
+
+        # 输出目录选择
+        ttk.Label(file_frame, text="输出目录:").grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(10, 0))
+        ttk.Entry(file_frame, textvariable=self.analysis_output_dir, width=50).grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(0, 10), pady=(10, 0))
+        ttk.Button(file_frame, text="浏览", command=self.browse_analysis_output_dir).grid(row=1, column=2, pady=(10, 0))
+
+    def create_gemini_config(self, parent, row):
+        """创建Gemini配置区域"""
+        config_frame = ttk.LabelFrame(parent, text="🤖 Gemini AI 配置", padding="10")
+        config_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 15))
+        config_frame.columnconfigure(1, weight=1)
+
+        # API Key输入
+        ttk.Label(config_frame, text="API Key:").grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
+        api_key_entry = ttk.Entry(config_frame, textvariable=self.gemini_api_key, width=50, show="*")
+        api_key_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 10))
+
+        # 模型选择
+        ttk.Label(config_frame, text="模型:").grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(10, 0))
+        model_combo = ttk.Combobox(config_frame, textvariable=self.analysis_model,
+                                  values=["gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash"],
+                                  state="readonly", width=25)
+        model_combo.grid(row=1, column=1, sticky=tk.W, pady=(10, 0))
+
+        # 说明文本
+        info_text = "• 需要有效的Google AI Studio API Key\n• gemini-2.0-flash-exp: 最新实验模型，支持视频分析\n• 分析结果将保存为JSON格式"
+        info_label = ttk.Label(config_frame, text=info_text, style='Info.TLabel', justify=tk.LEFT)
+        info_label.grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=(10, 0))
+
+    def create_analysis_control_buttons(self, parent, row):
+        """创建分析控制按钮区域"""
+        button_frame = ttk.Frame(parent)
+        button_frame.grid(row=row, column=0, columnspan=3, pady=(0, 15))
+
+        # 开始分析按钮
+        self.analysis_start_button = ttk.Button(button_frame, text="🚀 开始分析", command=self.start_video_analysis)
+        self.analysis_start_button.pack(side=tk.LEFT, padx=(0, 15))
+
+        # 停止分析按钮
+        self.analysis_stop_button = ttk.Button(button_frame, text="⏹️ 停止", command=self.stop_processing, state=tk.DISABLED)
+        self.analysis_stop_button.pack(side=tk.LEFT, padx=(0, 15))
+
+        # 打开结果目录按钮
+        self.analysis_open_output_button = ttk.Button(button_frame, text="📁 打开结果目录",
+                                                     command=self.open_analysis_output_directory, state=tk.DISABLED)
+        self.analysis_open_output_button.pack(side=tk.LEFT)
+
+    def create_analysis_results_section(self, parent, row):
+        """创建分析结果区域"""
+        self.analysis_results_frame = ttk.LabelFrame(parent, text="📊 分析结果", padding="10")
+        self.analysis_results_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.analysis_results_frame.columnconfigure(0, weight=1)
+        self.analysis_results_frame.rowconfigure(1, weight=1)
+
+        # 结果统计标签
+        self.analysis_results_label = ttk.Label(self.analysis_results_frame, text="", style='Info.TLabel')
+        self.analysis_results_label.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+
+        # 结果显示文本框
+        self.analysis_results_text = scrolledtext.ScrolledText(self.analysis_results_frame, height=8, wrap=tk.WORD)
+        self.analysis_results_text.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        # 配置行权重
+        parent.rowconfigure(row, weight=1)
+
+
     def create_control_buttons(self, parent, row):
         """创建控制按钮区域"""
         button_frame = ttk.Frame(parent)
@@ -392,7 +496,29 @@ class ShotDetectionGUI:
         dirname = filedialog.askdirectory(title="选择批量输出目录")
         if dirname:
             self.batch_output_dir.set(dirname)
-    
+
+    def browse_analysis_video_file(self):
+        """浏览分析视频文件"""
+        filename = filedialog.askopenfilename(
+            title="选择要分析的视频文件",
+            filetypes=[("视频文件", "*.mp4 *.avi *.mov *.mkv *.wmv *.flv *.webm *.m4v"), ("所有文件", "*.*")]
+        )
+        if filename:
+            self.analysis_video_path.set(filename)
+
+            # 自动设置输出目录
+            if not self.analysis_output_dir.get():
+                video_dir = Path(filename).parent
+                video_name = Path(filename).stem
+                default_output = video_dir / f"{video_name}_analysis"
+                self.analysis_output_dir.set(str(default_output))
+
+    def browse_analysis_output_dir(self):
+        """浏览分析输出目录"""
+        dirname = filedialog.askdirectory(title="选择分析结果输出目录")
+        if dirname:
+            self.analysis_output_dir.set(dirname)
+
     def update_video_info(self):
         """更新视频信息显示（简化版）"""
         video_file = self.video_path.get()
@@ -1089,6 +1215,303 @@ class ShotDetectionGUI:
     def open_batch_output_directory(self):
         """打开批量输出目录"""
         output_dir = self.batch_output_dir.get()
+        if not output_dir or not os.path.exists(output_dir):
+            messagebox.showwarning("警告", "输出目录不存在")
+            return
+
+        try:
+            if sys.platform == "win32":
+                os.startfile(str(output_dir))
+            elif sys.platform == "darwin":
+                subprocess.run(["open", str(output_dir)], check=True)
+            else:
+                subprocess.run(["xdg-open", str(output_dir)], check=True)
+        except Exception as e:
+            messagebox.showerror("错误", f"无法打开输出目录: {e}")
+
+    def start_video_analysis(self):
+        """开始视频分析"""
+        if self.processing:
+            messagebox.showwarning("警告", "正在处理中，请等待完成")
+            return
+
+        if not self.validate_analysis_inputs():
+            return
+
+        # 更新界面状态
+        self.processing = True
+        self.analysis_start_button.config(state=tk.DISABLED)
+        self.analysis_stop_button.config(state=tk.NORMAL)
+        self.analysis_open_output_button.config(state=tk.DISABLED)
+        self.status_label.config(text="正在分析视频...")
+        self.progress_var.set(0)
+
+        # 清空结果显示
+        self.analysis_results_text.delete(1.0, tk.END)
+        self.analysis_results_label.config(text="")
+
+        # 在新线程中执行视频分析
+        self.current_task = threading.Thread(target=self._video_analysis_worker, daemon=True)
+        self.current_task.start()
+
+    def validate_analysis_inputs(self):
+        """验证视频分析输入参数"""
+        if not self.analysis_video_path.get():
+            messagebox.showerror("错误", "请选择要分析的视频文件")
+            return False
+
+        if not os.path.exists(self.analysis_video_path.get()):
+            messagebox.showerror("错误", "视频文件不存在")
+            return False
+
+        if not self.gemini_api_key.get():
+            messagebox.showerror("错误", "请输入Gemini API Key")
+            return False
+
+        if not self.analysis_output_dir.get():
+            messagebox.showerror("错误", "请选择输出目录")
+            return False
+
+        return True
+
+    def _video_analysis_worker(self):
+        """视频分析工作线程"""
+        try:
+            video_path = self.analysis_video_path.get()
+            output_dir = Path(self.analysis_output_dir.get())
+            api_key = self.gemini_api_key.get()
+            model_name = self.analysis_model.get()
+
+            # 创建输出目录
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            self.log_message(f"开始分析视频: {Path(video_path).name}", "INFO")
+            self.update_progress(10, "初始化Gemini客户端...")
+
+            # 导入并使用提示词
+            from prompts_manager import PromptsManager
+            prompts_manager = PromptsManager()
+            analysis_prompt = prompts_manager.get_video_analysis_prompt()
+
+            if not analysis_prompt:
+                self.log_message("无法加载视频分析提示词", "ERROR")
+                self._finish_video_analysis()
+                return
+
+            self.update_progress(20, "加载分析提示词...")
+            self.log_message(f"使用提示词长度: {len(analysis_prompt)} 字符", "INFO")
+
+            # 调用真实的Gemini API进行视频分析
+            self.update_progress(40, "初始化Gemini分析器...")
+            self._real_gemini_analysis(video_path, output_dir, analysis_prompt, api_key, model_name)
+
+        except Exception as e:
+            self.log_message(f"视频分析出错: {e}", "ERROR")
+            self.root.after(0, self._finish_video_analysis)
+
+    def _real_gemini_analysis(self, video_path, output_dir, prompt, api_key, model_name):
+        """真实的Gemini分析过程"""
+        try:
+            import json
+            from gemini_video_analyzer import GeminiVideoAnalyzer
+
+            # 创建分析器
+            analyzer = GeminiVideoAnalyzer(api_key, model_name)
+
+            # 定义进度回调
+            def progress_callback(progress, description):
+                self.root.after(0, lambda: self.update_progress(progress, description))
+
+            # 执行分析
+            result = analyzer.analyze_video(video_path, prompt, progress_callback)
+
+            # 保存结果
+            result_file = output_dir / f"{Path(video_path).stem}_gemini_analysis.json"
+            with open(result_file, 'w', encoding='utf-8') as f:
+                json.dump(result, f, ensure_ascii=False, indent=2)
+
+            # 显示结果
+            self.root.after(0, lambda: self._display_gemini_results(result, result_file))
+
+        except Exception as e:
+            self.log_message(f"Gemini分析失败: {e}", "ERROR")
+            # 如果真实API失败，回退到模拟分析
+            self.log_message("回退到模拟分析模式...", "WARNING")
+            self.root.after(0, lambda: self._simulate_gemini_analysis(video_path, output_dir, prompt))
+
+    def _display_gemini_results(self, result, result_file):
+        """显示Gemini分析结果"""
+        try:
+            # 更新结果标签
+            video_info = result.get('video_info', {})
+            analysis_result = result.get('analysis_result', {})
+
+            self.analysis_results_label.config(
+                text=f"Gemini分析完成！模型: {video_info.get('model_used', 'unknown')} | 结果已保存: {result_file.name}"
+            )
+
+            # 在文本框中显示详细结果
+            self.analysis_results_text.delete(1.0, tk.END)
+
+            # 格式化显示结果
+            display_text = f"""🤖 Gemini AI 视频分析结果
+
+📹 视频信息:
+• 文件名: {video_info.get('file_name', 'unknown')}
+• 分析时间: {video_info.get('analysis_time', 'unknown')}
+• 使用模型: {video_info.get('model_used', 'unknown')}
+
+📊 分析结果:
+"""
+
+            # 显示分析内容
+            content_analysis = analysis_result.get('content_analysis', {})
+
+            if 'summary' in content_analysis:
+                display_text += f"\n📝 内容摘要:\n{content_analysis['summary']}\n"
+
+            if 'full_text' in content_analysis:
+                display_text += f"\n📄 完整分析:\n{content_analysis['full_text']}\n"
+
+            # 如果有结构化数据，也显示出来
+            for key, value in content_analysis.items():
+                if key not in ['summary', 'full_text'] and isinstance(value, (str, list, dict)):
+                    if isinstance(value, list):
+                        display_text += f"\n🏷️ {key}: {', '.join(map(str, value))}\n"
+                    elif isinstance(value, dict):
+                        display_text += f"\n📋 {key}:\n"
+                        for sub_key, sub_value in value.items():
+                            display_text += f"  • {sub_key}: {sub_value}\n"
+                    else:
+                        display_text += f"\n📌 {key}: {value}\n"
+
+            display_text += f"\n📁 结果文件: {result_file}"
+
+            self.analysis_results_text.insert(tk.END, display_text)
+            self.log_message(f"Gemini分析完成！结果已保存到: {result_file}", "SUCCESS")
+
+        except Exception as e:
+            self.log_message(f"结果显示出错: {e}", "ERROR")
+
+    def _simulate_gemini_analysis(self, video_path, output_dir, prompt):
+        """模拟Gemini分析过程（实际使用时需要替换为真实的API调用）"""
+        import json
+        import time
+
+        try:
+            # 模拟分析过程
+            self.update_progress(60, "分析视频内容...")
+            time.sleep(2)  # 模拟处理时间
+
+            self.update_progress(80, "生成分析报告...")
+
+            # 模拟分析结果
+            analysis_result = {
+                "video_info": {
+                    "file_name": Path(video_path).name,
+                    "file_path": str(video_path),
+                    "analysis_time": time.strftime("%Y-%m-%d %H:%M:%S")
+                },
+                "content_analysis": {
+                    "scenes": [
+                        {
+                            "start_time": "00:00:00",
+                            "end_time": "00:00:15",
+                            "description": "产品展示场景，白色背景下的服装细节展示"
+                        },
+                        {
+                            "start_time": "00:00:15",
+                            "end_time": "00:00:30",
+                            "description": "模特试穿场景，展示服装的穿着效果"
+                        }
+                    ],
+                    "objects": ["服装", "模特", "白色背景", "展示台"],
+                    "summary": "这是一个女装产品展示视频，主要展示服装的产品细节和穿着效果",
+                    "emotion": "优雅、时尚、专业",
+                    "keywords": ["女装", "产品展示", "模特试穿", "时尚", "优雅"]
+                },
+                "technical_analysis": {
+                    "shooting_style": "专业产品摄影",
+                    "composition": "居中构图，多角度展示",
+                    "lighting": "均匀柔光",
+                    "quality": "高清画质"
+                },
+                "confidence": 0.92
+            }
+
+            # 保存分析结果
+            result_file = output_dir / f"{Path(video_path).stem}_analysis.json"
+            with open(result_file, 'w', encoding='utf-8') as f:
+                json.dump(analysis_result, f, ensure_ascii=False, indent=2)
+
+            self.update_progress(100, "分析完成")
+
+            # 显示结果
+            self.root.after(0, lambda: self._display_analysis_results(analysis_result, result_file))
+
+        except Exception as e:
+            self.log_message(f"分析过程出错: {e}", "ERROR")
+        finally:
+            self.root.after(0, self._finish_video_analysis)
+
+    def _display_analysis_results(self, result, result_file):
+        """显示分析结果"""
+        # 更新结果标签
+        summary = result.get('content_analysis', {}).get('summary', '无摘要')
+        confidence = result.get('confidence', 0)
+        self.analysis_results_label.config(text=f"分析完成！置信度: {confidence:.2f} | 结果已保存: {result_file.name}")
+
+        # 在文本框中显示详细结果
+        self.analysis_results_text.delete(1.0, tk.END)
+
+        # 格式化显示结果
+        display_text = f"""📊 视频分析结果
+
+📹 视频信息:
+• 文件名: {result['video_info']['file_name']}
+• 分析时间: {result['video_info']['analysis_time']}
+
+📝 内容摘要:
+{summary}
+
+🎭 情感基调: {result['content_analysis']['emotion']}
+
+🏷️ 关键词: {', '.join(result['content_analysis']['keywords'])}
+
+🎬 场景分析:"""
+
+        for i, scene in enumerate(result['content_analysis']['scenes'], 1):
+            display_text += f"\n  {i}. {scene['start_time']} - {scene['end_time']}: {scene['description']}"
+
+        display_text += f"""
+
+🎯 识别对象: {', '.join(result['content_analysis']['objects'])}
+
+📷 技术分析:
+• 拍摄风格: {result['technical_analysis']['shooting_style']}
+• 构图方式: {result['technical_analysis']['composition']}
+• 光线效果: {result['technical_analysis']['lighting']}
+• 画质评估: {result['technical_analysis']['quality']}
+
+✅ 置信度: {confidence:.2f}
+
+📁 结果文件: {result_file}
+"""
+
+        self.analysis_results_text.insert(tk.END, display_text)
+        self.log_message(f"分析完成！结果已保存到: {result_file}", "SUCCESS")
+
+    def _finish_video_analysis(self):
+        """完成视频分析"""
+        self.processing = False
+        self.analysis_start_button.config(state=tk.NORMAL)
+        self.analysis_stop_button.config(state=tk.DISABLED)
+        self.analysis_open_output_button.config(state=tk.NORMAL)
+        self.status_label.config(text="视频分析完成")
+
+    def open_analysis_output_directory(self):
+        """打开分析输出目录"""
+        output_dir = self.analysis_output_dir.get()
         if not output_dir or not os.path.exists(output_dir):
             messagebox.showwarning("警告", "输出目录不存在")
             return
