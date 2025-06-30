@@ -1,0 +1,19 @@
+{
+  "name": "@mixvideo/web-cli",
+  "version": "1.0.0",
+  "description": "Web interface for MixVideo CLI commands",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js"
+  },
+  "keywords": [
+    "mixvideo",
+    "cli",
+    "web",
+    "video-editing",
+    "jianying"
+  ],
+  "author": "MixVideo Team",
+  "license": "MIT"
+}

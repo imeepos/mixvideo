@@ -17,8 +17,6 @@
   ],
   "scripts": {
     "build": "tsup",
-    "start": "tsx src/index.ts",
-    "dev": "tsup --watch",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit"
   },

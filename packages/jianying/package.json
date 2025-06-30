@@ -10,7 +10,6 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch",
     "test": "ts-node src/test-parser.ts",
     "example": "ts-node examples/basic-usage.ts",
     "parse": "ts-node src/parse-draft.ts",
