@@ -134,6 +134,42 @@ class SystemConfig:
 
 
 @dataclass
+class GeminiConfig:
+    """Gemini AI 视频分析配置"""
+
+    # Cloudflare Gateway 配置
+    cloudflare_project_id: str = "your_cloudflare_project_id_here"
+    cloudflare_gateway_id: str = "your_cloudflare_gateway_id_here"
+
+    # Google 项目配置
+    google_project_id: str = "your_google_project_id_here"
+
+    # 模型配置
+    model_name: str = "gemini-2.5-flash"
+
+    # 区域配置（支持多区域负载均衡）
+    regions: List[str] = field(default_factory=lambda: [
+        "us-central1", "us-east1", "europe-west1"
+    ])
+
+    # 缓存配置
+    enable_cache: bool = True
+    cache_dir: str = ".cache/gemini_analysis"
+    cache_expiry_days: int = 7
+
+    # API 配置
+    timeout_seconds: int = 120
+    max_retries: int = 3
+    retry_delay_seconds: int = 5
+
+    # 文件上传配置
+    max_file_size_mb: int = 100
+    supported_formats: List[str] = field(default_factory=lambda: [
+        ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".webm"
+    ])
+
+
+@dataclass
 class ClassificationIntegrationConfig:
     """归类功能集成配置"""
 
@@ -196,7 +232,8 @@ class ConfigManager:
         self.output = OutputConfig()
         self.quality = QualityConfig()
         self.system = SystemConfig()
-        self.classification = ClassificationIntegrationConfig()  # 新增归类配置
+        self.classification = ClassificationIntegrationConfig()  # 归类配置
+        self.gemini = GeminiConfig()  # 新增Gemini配置
 
         if config_file and os.path.exists(config_file):
             self.load_from_file(config_file)
@@ -219,6 +256,8 @@ class ConfigManager:
             self._update_config(self.quality, config_data['quality'])
         if 'system' in config_data:
             self._update_config(self.system, config_data['system'])
+        if 'gemini' in config_data:
+            self._update_config(self.gemini, config_data['gemini'])
     
     def save_to_file(self, config_file: str):
         """保存配置到文件"""
@@ -229,7 +268,8 @@ class ConfigManager:
             'processing': self._config_to_dict(self.processing),
             'output': self._config_to_dict(self.output),
             'quality': self._config_to_dict(self.quality),
-            'system': self._config_to_dict(self.system)
+            'system': self._config_to_dict(self.system),
+            'gemini': self._config_to_dict(self.gemini)
         }
         
         with open(config_file, 'w', encoding='utf-8') as f:

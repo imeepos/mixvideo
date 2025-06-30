@@ -1,0 +1,50 @@
+# Gemini AI 视频分析配置示例
+# 复制此文件内容到 config.yaml 中的 gemini 部分
+
+gemini:
+  # Cloudflare Gateway 配置
+  # 从 Cloudflare Dashboard 获取这些值
+  cloudflare_project_id: "your_cloudflare_project_id_here"
+  cloudflare_gateway_id: "your_cloudflare_gateway_id_here"
+  
+  # Google 项目配置
+  # 从 Google Cloud Console 获取项目ID
+  google_project_id: "your_google_project_id_here"
+  
+  # 模型配置
+  # 推荐使用 gemini-2.5-flash，支持视频分析
+  model_name: "gemini-2.5-flash"
+  
+  # 区域配置（支持多区域负载均衡）
+  # 可以添加或删除区域，系统会随机选择
+  regions:
+    - "us-central1"
+    - "us-east1"
+    - "europe-west1"
+    - "asia-southeast1"  # 可选：亚洲区域
+  
+  # 缓存配置
+  enable_cache: true
+  cache_dir: ".cache/gemini_analysis"
+  cache_expiry_days: 7  # 缓存保留天数
+  
+  # API 配置
+  timeout_seconds: 120    # 请求超时时间
+  max_retries: 3         # 最大重试次数
+  retry_delay_seconds: 5  # 重试延迟
+  
+  # 文件上传配置
+  max_file_size_mb: 100  # 最大文件大小限制
+  supported_formats:     # 支持的视频格式
+    - ".mp4"
+    - ".avi"
+    - ".mov"
+    - ".mkv"
+    - ".wmv"
+    - ".webm"
+
+# 配置说明：
+# 1. 替换所有 "your_xxx_here" 为实际的配置值
+# 2. Cloudflare 配置：登录 Cloudflare Dashboard，在 AI Gateway 部分获取
+# 3. Google 项目配置：登录 Google Cloud Console，获取项目ID
+# 4. 保存后在GUI中点击"重新加载"按钮应用配置

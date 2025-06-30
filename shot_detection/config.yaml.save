@@ -101,11 +101,11 @@ quality:
 # Gemini AI 视频分析配置
 gemini:
   # Cloudflare Gateway 配置
-  cloudflare_project_id: "67720b647ff2b55cf37ba3ef9e677083"
-  cloudflare_gateway_id: "bowong-dev"
+  cloudflare_project_id: "your_cloudflare_project_id_here"
+  cloudflare_gateway_id: "your_cloudflare_gateway_id_here"
 
   # Google 项目配置
-  google_project_id: "gen-lang-client-0413414134"
+  google_project_id: "your_google_project_id_here"
 
   # 模型配置
   model_name: "gemini-2.5-flash"

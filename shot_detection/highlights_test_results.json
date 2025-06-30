@@ -1,0 +1,40 @@
+{
+  "new_format_highlights": [
+    {
+      "timestamp": "00:15",
+      "description": "模特优雅转身展示裙装飘逸效果",
+      "type": "动作",
+      "confidence": 0.95,
+      "duration": "3"
+    },
+    {
+      "timestamp": "00:32",
+      "description": "特写镜头展示面料质感和细节工艺",
+      "type": "视觉",
+      "confidence": 0.88,
+      "duration": "2"
+    },
+    {
+      "timestamp": "01:05",
+      "description": "音乐高潮配合模特跳跃动作",
+      "type": "音乐",
+      "confidence": 0.92,
+      "duration": "4"
+    }
+  ],
+  "old_format_highlights": [
+    {
+      "timestamp": "00:25",
+      "description": "文本提及的高光时刻 1",
+      "type": "text_extracted",
+      "confidence": 0.6
+    },
+    {
+      "timestamp": "01:10",
+      "description": "文本提及的高光时刻 2",
+      "type": "text_extracted",
+      "confidence": 0.6
+    }
+  ],
+  "test_time": "2024-01-01 12:00:00"
+}
