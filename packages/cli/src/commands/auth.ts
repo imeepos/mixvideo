@@ -8,20 +8,37 @@ export function createAuthCommands(): { login: Command; logout: Command } {
         .description('登录到 MixVideo')
         .option('-u, --username <username>', '用户名')
         .option('-p, --password <password>', '密码')
+        .addHelpText('after', `
+示例:
+  $ mixvideo login -u user@example.com -p password123
+  $ mixvideo login --username user@example.com --password password123
+
+注意: 选项标志 -u 和 -p 之间不能有空格`)
         .action(async (options) => {
             try {
                 console.log('🔐 开始登录...');
-                
-                // TODO: 实现实际的登录逻辑
-                if (options.username && options.password) {
-                    console.log(`👤 用户名: ${options.username}`);
-                    // 这里应该调用实际的认证 API
-                    console.log('✅ 登录成功！');
-                } else {
-                    console.log('📝 请提供用户名和密码');
-                    console.log('使用方式: mixvideo login -u <username> -p <password>');
+
+                // 验证必需参数
+                if (!options.username || !options.password) {
+                    console.error('❌ 缺少必需参数');
+                    console.log('� 请提供用户名和密码');
+                    console.log('');
+                    console.log('正确使用方式:');
+                    console.log('  mixvideo login -u <username> -p <password>');
+                    console.log('');
+                    console.log('示例:');
+                    console.log('  mixvideo login -u user@bowongai.com -p bowong7777');
+                    console.log('');
+                    console.log('⚠️  注意: -u 和 -p 之间不能有空格');
+                    process.exit(1);
                 }
-                
+
+                console.log(`👤 用户名: ${options.username}`);
+
+                // TODO: 实现实际的登录逻辑
+                // 这里应该调用实际的认证 API
+                console.log('✅ 登录成功！');
+
             } catch (error) {
                 console.error('❌ 登录失败:', error);
                 process.exit(1);

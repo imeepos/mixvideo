@@ -1,7 +1,7 @@
 {
   "name": "@mixvideo/cli",
-  "version": "1.0.3",
-  "description": "Gemini AI API client library for MixVideo project",
+  "version": "1.0.4",
+  "description": "AI-powered video analysis and editing CLI tool for automatic video classification and Jianying draft generation",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -23,12 +23,15 @@
     "type-check": "tsc --noEmit"
   },
   "keywords": [
-    "gemini",
+    "video-analysis",
     "ai",
-    "google",
-    "vertex-ai",
+    "cli",
+    "video-editing",
+    "gemini",
+    "jianying",
+    "video-classification",
     "typescript",
-    "api-client"
+    "automation"
   ],
   "author": "MixVideo Team",
   "license": "MIT",
