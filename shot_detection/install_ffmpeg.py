@@ -30,31 +30,36 @@ def check_ffmpeg_installed():
     return False
 
 
-def download_ffmpeg_windows():
+def download_ffmpeg_windows(silent=False):
     """下载Windows版FFmpeg"""
-    print("📥 下载FFmpeg for Windows...")
-    
+    if not silent:
+        print("📥 下载FFmpeg for Windows...")
+
     # FFmpeg下载URL (使用官方构建)
     ffmpeg_url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
-    
+
     # 创建下载目录
     download_dir = Path("ffmpeg_download")
     download_dir.mkdir(exist_ok=True)
-    
+
     zip_file = download_dir / "ffmpeg.zip"
-    
+
     try:
-        print(f"正在下载: {ffmpeg_url}")
-        print("这可能需要几分钟时间...")
-        
+        if not silent:
+            print(f"正在下载: {ffmpeg_url}")
+            print("这可能需要几分钟时间...")
+
         # 下载文件
         urllib.request.urlretrieve(ffmpeg_url, zip_file)
-        print(f"✅ 下载完成: {zip_file}")
-        
+
+        if not silent:
+            print(f"✅ 下载完成: {zip_file}")
+
         return zip_file
-        
+
     except Exception as e:
-        print(f"❌ 下载失败: {e}")
+        if not silent:
+            print(f"❌ 下载失败: {e}")
         return None
 
 

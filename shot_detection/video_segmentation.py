@@ -52,17 +52,48 @@ def check_ffmpeg():
         return False
 
 
-def create_segment_with_ffmpeg(video_path: str, segment: VideoSegment, 
+def find_ffmpeg_executable():
+    """查找可用的FFmpeg可执行文件"""
+    # 可能的FFmpeg路径
+    possible_paths = [
+        'ffmpeg',  # 系统PATH中的ffmpeg
+        'bin/ffmpeg.exe',  # 本地bin目录
+        'ffmpeg.exe',  # 当前目录
+        'ffmpeg/bin/ffmpeg.exe',  # ffmpeg子目录
+        Path(__file__).parent / 'bin' / 'ffmpeg.exe',  # 相对于脚本的bin目录
+    ]
+
+    for path in possible_paths:
+        try:
+            result = subprocess.run([str(path), '-version'],
+                                  capture_output=True, timeout=5)
+            if result.returncode == 0:
+                logger.info(f"找到FFmpeg: {path}")
+                return str(path)
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
+            continue
+
+    return None
+
+
+def create_segment_with_ffmpeg(video_path: str, segment: VideoSegment,
                               quality: str = "medium") -> bool:
     """使用FFmpeg创建视频分段"""
     try:
+        # 查找FFmpeg可执行文件
+        ffmpeg_cmd = find_ffmpeg_executable()
+        if not ffmpeg_cmd:
+            logger.error("❌ 未找到FFmpeg可执行文件")
+            logger.error("请安装FFmpeg或运行: python install_ffmpeg.py")
+            return False
+
         # 确保输出目录存在
         output_dir = Path(segment.file_path).parent
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # 构建FFmpeg命令
         cmd = [
-            'ffmpeg', '-y',  # 覆盖输出文件
+            ffmpeg_cmd, '-y',  # 使用找到的FFmpeg路径，覆盖输出文件
             '-i', video_path,  # 输入文件
             '-ss', str(segment.start_time),  # 开始时间
             '-t', str(segment.duration),  # 持续时间

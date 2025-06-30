@@ -30,17 +30,21 @@ def create_complete_python_distribution():
     
     # 主要Python文件
     python_files = [
-        "run_gui.py",
+        "run_gui.py",  # 修改：集成自动检查和安装
         "gui_app.py",
         "gui_logger.py",  # 重要：包含GUI日志模块
         "config.py",
-        "video_segmentation.py",
+        "video_segmentation.py",  # 修改：智能FFmpeg查找
         "video_processing_with_callbacks.py",
         "font_config.py",
         "build_windows_executable.py",
         "test_tkinter.py",  # tkinter测试工具
         "python313_compatibility_fix.py",  # Python 3.13兼容性修复
         "run_python_fixed.bat",  # 修复的启动脚本
+        "run_auto_setup.bat",  # 自动设置启动脚本
+        "install_ffmpeg.py",  # FFmpeg自动安装工具
+        "check_ffmpeg.py",  # FFmpeg检查工具
+        "auto_install_tools.py",  # 自动安装所有工具
         "__init__.py"
     ]
     

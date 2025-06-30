@@ -23,6 +23,9 @@ batch_demo_output
 video_segments_quality
 demo_lossless
 demo_fast
+ShotDetectionGUI_v1.0.0_20250630
+ShotDetectionGUI_v1.0.1_Fixed_20250630
+*.zip
 *.mp4
 
 # Environment variables
