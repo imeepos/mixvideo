@@ -13,6 +13,8 @@ resources
 .video-analysis-cache
 .video-upload-cache
 
+outputs
+
 # Environment variables
 .env
 .env.local

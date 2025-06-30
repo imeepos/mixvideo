@@ -234,6 +234,37 @@ export class AnalysisEngine {
     options: AnalysisOptions,
     videoPath?: string
   ): Promise<any> {
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 尝试分析 (${attempt}/${maxRetries}): ${videoPath ? path.basename(videoPath) : 'unknown'}`);
+        return await this.performSingleAnalysis(gcsPath, prompt, options, videoPath);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.warn(`⚠️ 分析尝试 ${attempt} 失败:`, lastError.message);
+
+        if (attempt < maxRetries) {
+          const delay = Math.pow(2, attempt) * 1000; // 指数退避：2s, 4s, 8s
+          console.log(`⏳ 等待 ${delay/1000}s 后重试...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    throw lastError || new Error('Analysis failed after all retries');
+  }
+
+  /**
+   * Perform a single analysis attempt
+   */
+  private async performSingleAnalysis(
+    gcsPath: string,
+    prompt: string,
+    options: AnalysisOptions,
+    videoPath?: string
+  ): Promise<any> {
     try {
       // 检查缓存
       if (videoPath) {
@@ -255,12 +286,18 @@ export class AnalysisEngine {
             {
               fileData: {
                 mimeType: 'video/mp4', // Adjust based on actual video format
-                fileUri: gcsPath
+                fileUri: this.formatGcsUri(gcsPath)
               }
             }
           ]
         }
       ];
+      console.log('📤 发送 Gemini API 请求:', {
+        fileUri: this.formatGcsUri(gcsPath),
+        promptLength: prompt.length,
+        model: 'gemini-2.5-flash'
+      });
+
       const response = await this.geminiClient.generateContent(
         contents,
         'gemini-2.5-flash',
@@ -268,11 +305,28 @@ export class AnalysisEngine {
           temperature: 0.3,
           maxOutputTokens: 4096,
           topP: 0.8
-        }
+        },
+        60 // 增加超时时间到 60 秒
       );
+
+      // 添加详细的调试信息
+      console.log('🔍 Gemini API 响应调试信息:');
+      console.log('- Status Code:', response.statusCode);
+      console.log('- Response exists:', !!response.response);
+      console.log('- Candidates exists:', !!response.response?.candidates);
+      console.log('- Candidates length:', response.response?.candidates?.length || 0);
+
+      if (response.response?.candidates?.[0]) {
+        console.log('- First candidate exists:', true);
+        console.log('- Content exists:', !!response.response.candidates[0].content);
+        console.log('- Parts exists:', !!response.response.candidates[0].content?.parts);
+        console.log('- Parts length:', response.response.candidates[0].content?.parts?.length || 0);
+        console.log('- Text exists:', !!response.response.candidates[0].content?.parts?.[0]?.text);
+      }
 
       if (response.statusCode === 200 && response.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
         const responseText = response.response.candidates[0].content.parts[0].text;
+        console.log('✅ 成功获取响应文本，长度:', responseText.length);
         const parsedResult = this.parseAnalysisResponse(responseText);
 
         // 保存到缓存
@@ -283,7 +337,16 @@ export class AnalysisEngine {
         return parsedResult;
       }
 
-      throw new Error('Invalid response from Gemini API');
+      // 提供更详细的错误信息
+      const errorDetails = {
+        statusCode: response.statusCode,
+        hasResponse: !!response.response,
+        candidatesCount: response.response?.candidates?.length || 0,
+        errorMessage: response.response?.error || 'Unknown error'
+      };
+
+      console.error('❌ Gemini API 响应无效:', JSON.stringify(errorDetails, null, 2));
+      throw new Error(`Invalid response from Gemini API: ${JSON.stringify(errorDetails)}`);
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -300,20 +363,97 @@ export class AnalysisEngine {
    */
   private parseAnalysisResponse(responseText: string): any {
     try {
+      console.log('📝 开始解析响应文本，长度:', responseText.length);
+
+      // 清理响应文本
+      const cleanedText = this.cleanResponseText(responseText);
+
       // Try to extract JSON from the response
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        console.log('🔍 找到JSON结构，尝试解析...');
+        const jsonStr = jsonMatch[0];
+
+        // 尝试修复常见的JSON问题
+        const fixedJson = this.fixJsonString(jsonStr);
+        return JSON.parse(fixedJson);
       }
 
+      console.log('⚠️ 未找到JSON结构，使用文本解析');
       // If no JSON found, create structured response from text
-      return this.parseTextResponse(responseText);
+      return this.parseTextResponse(cleanedText);
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.warn('Failed to parse JSON response, using text parsing:', errorMessage);
+      console.warn('❌ JSON解析失败，使用文本解析:', errorMessage);
+      console.warn('原始响应文本:', responseText.substring(0, 500) + '...');
       return this.parseTextResponse(responseText);
     }
+  }
+
+  /**
+   * Clean response text
+   */
+  private cleanResponseText(text: string): string {
+    return text
+      .replace(/```json\s*/g, '') // 移除 ```json
+      .replace(/```\s*/g, '')     // 移除 ```
+      .replace(/^\s*[\r\n]+/gm, '') // 移除空行
+      .trim();
+  }
+
+  /**
+   * Fix common JSON string issues
+   */
+  private fixJsonString(jsonStr: string): string {
+    return jsonStr
+      .replace(/,(\s*[}\]])/g, '$1')  // 移除尾随逗号
+      .replace(/([{,]\s*)(\w+):/g, '$1"$2":') // 给属性名加引号
+      .replace(/:\s*'([^']*)'/g, ': "$1"')    // 单引号改双引号
+      .replace(/\n/g, ' ')                    // 移除换行符
+      .replace(/\s+/g, ' ')                   // 合并多个空格
+      .trim();
+  }
+
+  /**
+   * Format GCS URI correctly
+   */
+  private formatGcsUri(gcsPath: string): string {
+    console.log('🔗 格式化 GCS URI:', gcsPath);
+
+    // 如果已经是完整的 gs:// URI，直接返回
+    if (gcsPath.startsWith('gs://')) {
+      console.log('✅ 已是完整 GCS URI');
+      return gcsPath;
+    }
+
+    // 如果是 https:// 开头的 URL，可能是 mediaLink，需要转换
+    if (gcsPath.startsWith('https://')) {
+      console.log('🔄 检测到 HTTPS URL，尝试转换为 GCS URI');
+      // 尝试从 Google Storage URL 中提取 bucket 和 object 名称
+      const match = gcsPath.match(/https:\/\/storage\.googleapis\.com\/([^\/]+)\/(.+)/);
+      if (match) {
+        const [, bucket, object] = match;
+        const gcsUri = `gs://${bucket}/${object}`;
+        console.log('✅ 转换为 GCS URI:', gcsUri);
+        return gcsUri;
+      }
+    }
+
+    // 如果是相对路径，添加 gs:// 前缀
+    if (gcsPath.startsWith('/')) {
+      gcsPath = gcsPath.substring(1);
+    }
+
+    // 如果路径不包含 bucket 名称，假设是完整路径
+    if (!gcsPath.includes('/')) {
+      console.warn('⚠️ GCS路径格式可能不正确:', gcsPath);
+      return `gs://${gcsPath}`;
+    }
+
+    const formattedUri = `gs://${gcsPath}`;
+    console.log('🔧 格式化后的 GCS URI:', formattedUri);
+    return formattedUri;
   }
 
   /**

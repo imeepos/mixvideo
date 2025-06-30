@@ -342,10 +342,21 @@ export class FolderMatcher {
    */
   private parseSemanticMatchingResponse(response: string, folders: string[]): FolderMatchResult[] {
     try {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) return [];
+      console.log('📝 解析文件夹匹配响应，长度:', response.length);
 
-      const data = JSON.parse(jsonMatch[0]);
+      // 清理响应文本
+      const cleanedResponse = this.cleanJsonResponse(response);
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+
+      if (!jsonMatch) {
+        console.warn('⚠️ 未找到JSON结构，使用降级匹配');
+        return this.fallbackMatching(response, folders);
+      }
+
+      const jsonStr = this.fixJsonString(jsonMatch[0]);
+      console.log('🔍 尝试解析JSON:', jsonStr.substring(0, 200) + '...');
+
+      const data = JSON.parse(jsonStr);
       const matches: FolderMatchResult[] = [];
 
       if (data.matches && Array.isArray(data.matches)) {
@@ -368,9 +379,180 @@ export class FolderMatcher {
       return matches;
 
     } catch (error) {
-      console.warn('Failed to parse semantic matching response:', this.getErrorMessage(error));
-      return [];
+      console.warn('❌ 解析文件夹匹配响应失败:', this.getErrorMessage(error));
+      console.warn('原始响应:', response.substring(0, 500) + '...');
+      return this.fallbackMatching(response, folders);
     }
+  }
+
+  /**
+   * Clean JSON response text
+   */
+  private cleanJsonResponse(text: string): string {
+    return text
+      .replace(/```json\s*/g, '') // 移除 ```json
+      .replace(/```\s*/g, '')     // 移除 ```
+      .replace(/^\s*[\r\n]+/gm, '') // 移除空行
+      .trim();
+  }
+
+  /**
+   * Fix common JSON string issues
+   */
+  private fixJsonString(jsonStr: string): string {
+    let fixed = jsonStr
+      .replace(/,(\s*[}\]])/g, '$1')  // 移除尾随逗号
+      .replace(/([{,]\s*)(\w+):/g, '$1"$2":') // 给属性名加引号
+      .replace(/:\s*'([^']*)'/g, ': "$1"')    // 单引号改双引号
+      .replace(/\n/g, ' ')                    // 移除换行符
+      .replace(/\s+/g, ' ')                   // 合并多个空格
+      .trim();
+
+    // 处理截断的 JSON（如果以逗号结尾但没有闭合）
+    if (fixed.endsWith(',')) {
+      fixed = fixed.slice(0, -1); // 移除末尾逗号
+    }
+
+    // 确保 JSON 结构完整
+    const openBraces = (fixed.match(/\{/g) || []).length;
+    const closeBraces = (fixed.match(/\}/g) || []).length;
+    const openBrackets = (fixed.match(/\[/g) || []).length;
+    const closeBrackets = (fixed.match(/\]/g) || []).length;
+
+    // 补充缺失的闭合符号
+    for (let i = 0; i < openBrackets - closeBrackets; i++) {
+      fixed += ']';
+    }
+    for (let i = 0; i < openBraces - closeBraces; i++) {
+      fixed += '}';
+    }
+
+    return fixed;
+  }
+
+  /**
+   * Fallback matching when JSON parsing fails
+   */
+  private fallbackMatching(response: string, folders: string[]): FolderMatchResult[] {
+    console.log('🔄 使用降级匹配策略');
+
+    const results: FolderMatchResult[] = [];
+
+    // 简单的关键词匹配
+    for (const folder of folders) {
+      const folderName = path.basename(folder);
+      const lowerResponse = response.toLowerCase();
+      const lowerFolderName = folderName.toLowerCase();
+
+      let confidence = 0;
+      const reasons: string[] = [];
+
+      // 检查文件夹名称是否在响应中出现
+      if (lowerResponse.includes(lowerFolderName)) {
+        confidence += 0.6; // 提高直接匹配的权重
+        reasons.push(`文件夹名称匹配: ${folderName}`);
+      }
+
+      // 检查相关关键词
+      const keywords = this.extractKeywords(lowerResponse);
+      const folderKeywords = this.getFolderKeywords(lowerFolderName);
+
+      for (const keyword of keywords) {
+        if (folderKeywords.includes(keyword)) {
+          confidence += 0.3; // 提高关键词匹配权重
+          reasons.push(`关键词匹配: ${keyword}`);
+        }
+      }
+
+      // 检查内容相关性
+      const contentScore = this.calculateContentRelevance(lowerResponse, lowerFolderName);
+      if (contentScore > 0) {
+        confidence += contentScore;
+        reasons.push(`内容相关性: ${(contentScore * 100).toFixed(0)}%`);
+      }
+
+      if (confidence > 0.2) { // 降低阈值
+        // 提高降级匹配的置信度
+        const adjustedConfidence = Math.min(confidence + 0.3, 0.9); // 提升置信度
+        results.push({
+          folderPath: folder,
+          folderName,
+          confidence: adjustedConfidence,
+          reasons,
+          semanticScore: confidence,
+          relevanceScore: confidence,
+          action: this.determineAction(adjustedConfidence)
+        });
+      }
+    }
+
+    return results.sort((a, b) => b.confidence - a.confidence);
+  }
+
+  /**
+   * Extract keywords from text
+   */
+  private extractKeywords(text: string): string[] {
+    const commonWords = ['的', '是', '在', '有', '和', '与', '或', '但', '这', '那', '一个', '一些'];
+    return text
+      .split(/[\s,，。！？；：]+/)
+      .filter(word => word.length > 1 && !commonWords.includes(word))
+      .slice(0, 10); // 取前10个关键词
+  }
+
+  /**
+   * Get keywords for folder name
+   */
+  private getFolderKeywords(folderName: string): string[] {
+    const keywordMap: Record<string, string[]> = {
+      '产品展示': ['产品', '展示', '商品', '物品'],
+      '产品使用': ['使用', '操作', '演示', '教程'],
+      '生活场景': ['生活', '日常', '场景', '环境'],
+      '模特实拍': ['模特', '实拍', '人物', '拍摄'],
+      '服装配饰': ['服装', '配饰', '衣服', '饰品'],
+      '美妆护肤': ['美妆', '护肤', '化妆', '保养'],
+      '其他': ['其他', '未分类', '杂项']
+    };
+
+    return keywordMap[folderName] || [folderName];
+  }
+
+  /**
+   * 计算内容相关性
+   */
+  private calculateContentRelevance(response: string, folderName: string): number {
+    let score = 0;
+
+    // 定义文件夹相关的内容模式
+    const contentPatterns: Record<string, string[]> = {
+      '产品展示': ['展示', '介绍', '外观', '细节', '特色', '卖点'],
+      '产品使用': ['使用', '演示', '操作', '功能', '教程', '方法'],
+      '生活场景': ['生活', '日常', '场景', '环境', '氛围', '情境'],
+      '模特实拍': ['模特', '实拍', '人物', '穿着', '试穿', '搭配'],
+      '服装配饰': ['服装', '衣服', '配饰', '穿搭', '时尚', '款式'],
+      '美妆护肤': ['美妆', '化妆', '护肤', '保养', '美容', '肌肤'],
+      '其他': ['其他', '杂项', '未分类']
+    };
+
+    const patterns = contentPatterns[folderName] || [];
+
+    for (const pattern of patterns) {
+      if (response.includes(pattern)) {
+        score += 0.1; // 每个匹配的模式增加0.1分
+      }
+    }
+
+    // 检查特定的产品类型
+    if (folderName === '服装配饰') {
+      const clothingTerms = ['外套', '夹克', '上衣', '裤子', '裙子', '连帽', '防晒衣'];
+      for (const term of clothingTerms) {
+        if (response.includes(term)) {
+          score += 0.15;
+        }
+      }
+    }
+
+    return Math.min(score, 0.5); // 最高0.5分
   }
 
   private getErrorMessage(error: unknown){
@@ -411,22 +593,7 @@ export class FolderMatcher {
     return 'ignore';
   }
 
-  /**
-   * Extract keywords from content
-   */
-  private extractKeywords(content: string): string[] {
-    const keywords: string[] = [];
-    
-    // Common product keywords
-    const productKeywords = ['产品', '商品', '物品', '设备', '工具', '装置'];
-    for (const keyword of productKeywords) {
-      if (content.includes(keyword)) {
-        keywords.push(keyword);
-      }
-    }
 
-    return keywords;
-  }
 
   /**
    * Extract categories from content

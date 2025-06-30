@@ -62,12 +62,16 @@ async function main() {
                         maxRetries: 3
                     },
                     workflow: {
-                        minConfidenceForMove: 0.7,
+                        minConfidenceForMove: 0.6, // 降低置信度阈值，更容易匹配
                         fileOrganizerConfig: {
-                            moveFiles: false, // 复制而不是移动，更安全
+                            moveFiles: false, // ✅ 启用文件移动
                             namingMode: 'smart',
                             createDirectories: true,
-                            conflictResolution: 'rename'
+                            conflictResolution: 'rename',
+                            createBackup: true // 移动前创建备份，更安全
+                        },
+                        folderMatchConfig: {
+                            baseDirectory: join(root, 'outputs') // 设置基础目录为 outputs
                         }
                     }
                 } as any); // 临时使用 any 类型，等待类型更新
@@ -97,11 +101,22 @@ async function main() {
                 const targetDir = join(root, 'outputs');
                 console.log(` 结果目录: ${targetDir}`);
 
-                // 确保输出目录存在
+                // 确保输出目录存在并创建分类子目录
                 try {
                     await mkdir(targetDir, { recursive: true });
+
+                    // 创建常见的分类目录
+                    const categories = [
+                        '产品展示', '产品使用', '生活场景', '模特实拍'
+                    ];
+
+                    for (const category of categories) {
+                        await mkdir(join(targetDir, category), { recursive: true });
+                    }
+
+                    console.log(`📁 已创建分类目录: ${categories.join(', ')}`);
                 } catch (error) {
-                    // 目录可能已存在，忽略错误
+                    console.warn('⚠️ 创建目录时出现警告:', error);
                 }
 
                 // 执行完整的分析工作流
@@ -111,9 +126,21 @@ async function main() {
                     analysisMode,
                     {
                         analysisOptions,
+                        fileOrganizerConfig: {
+                            moveFiles: false, // 📋 复制文件（更安全，原文件保持不变）
+                            namingMode: 'preserve-original', // 🎯 保留原始文件名，只修复后缀
+                            createDirectories: true,
+                            conflictResolution: 'rename'
+                            // 复制模式下无需备份设置
+                        },
+                        minConfidenceForMove: 0.4 // 降低置信度阈值，更容易移动文件
+                    },
+                    (progress) => {
+                        console.log(`📊 [${progress.phase}] ${progress.step} (${progress.progress}%)`);
+                        console.log(`   已处理: ${progress.processedVideos}/${progress.totalVideos}`);
                     }
                 );
-                console.log(result)
+                await writeFile(join(targetDir, 'report.json'), JSON.stringify(result, null, 2))
             } catch (error) {
                 console.error('❌ 分析过程中出现错误:', error);
                 process.exit(1);

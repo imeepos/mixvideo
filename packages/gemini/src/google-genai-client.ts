@@ -147,11 +147,22 @@ export class GoogleGenaiClient {
       );
 
       if (response.status !== 200) {
+        console.error('❌ Gemini API 非200响应:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: response.data
+        });
         return {
           response: null,
           statusCode: response.status
         };
       }
+
+      console.log('✅ Gemini API 200响应，数据结构:', {
+        hasCandidates: !!response.data?.candidates,
+        candidatesLength: response.data?.candidates?.length || 0,
+        firstCandidateStructure: response.data?.candidates?.[0] ? Object.keys(response.data.candidates[0]) : []
+      });
 
       return {
         response: response.data,
@@ -159,17 +170,31 @@ export class GoogleGenaiClient {
       };
 
     } catch (error: any) {
+      console.error('❌ Gemini API 请求失败:', {
+        message: error.message,
+        code: error.code,
+        hasResponse: !!error.response,
+        hasRequest: !!error.request
+      });
+
       if (error.response) {
+        console.error('响应错误详情:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        });
         return {
           response: null,
           statusCode: error.response.status
         };
       } else if (error.request) {
+        console.error('网络请求失败，无响应');
         return {
           response: null,
           statusCode: 0
         };
       } else {
+        console.error('请求配置错误:', error.message);
         return {
           response: null,
           statusCode: -1
