@@ -138,14 +138,21 @@ class GeminiConfig:
     """Gemini AI 视频分析配置"""
 
     # Cloudflare Gateway 配置
-    cloudflare_project_id: str = "your_cloudflare_project_id_here"
-    cloudflare_gateway_id: str = "your_cloudflare_gateway_id_here"
+    cloudflare_project_id: str = "67720b647ff2b55cf37ba3ef9e677083"
+    cloudflare_gateway_id: str = "bowong-dev"
 
     # Google 项目配置
-    google_project_id: str = "your_google_project_id_here"
+    google_project_id: str = "gen-lang-client-0413414134"
 
     # 模型配置
     model_name: str = "gemini-2.5-flash"
+
+    # API 配置
+    base_url: str = "https://bowongai-dev--bowong-ai-video-gemini-fastapi-webapp.modal.run"
+    bearer_token: str = "bowong7777"
+    timeout_seconds: int = 120
+    max_retries: int = 3
+    retry_delay_seconds: int = 5
 
     # 区域配置（支持多区域负载均衡）
     regions: List[str] = field(default_factory=lambda: [
@@ -156,11 +163,6 @@ class GeminiConfig:
     enable_cache: bool = True
     cache_dir: str = ".cache/gemini_analysis"
     cache_expiry_days: int = 7
-
-    # API 配置
-    timeout_seconds: int = 120
-    max_retries: int = 3
-    retry_delay_seconds: int = 5
 
     # 文件上传配置
     max_file_size_mb: int = 100

@@ -406,6 +406,10 @@ class ShotDetectionGUI:
         self.analysis_stop_button = ttk.Button(button_frame, text="⏹️ 停止", command=self.stop_processing, state=tk.DISABLED)
         self.analysis_stop_button.pack(side=tk.LEFT, padx=(0, 15))
 
+        # 测试Gemini连接按钮
+        self.test_gemini_button = ttk.Button(button_frame, text="🔗 测试Gemini", command=self.test_gemini_connection)
+        self.test_gemini_button.pack(side=tk.LEFT, padx=(0, 15))
+
         # 打开结果目录按钮
         self.analysis_open_output_button = ttk.Button(button_frame, text="📁 打开结果目录",
                                                      command=self.open_analysis_output_directory, state=tk.DISABLED)
@@ -1371,9 +1375,75 @@ class ShotDetectionGUI:
 
         except Exception as e:
             self.log_message(f"❌ Gemini分析失败: {e}", "ERROR")
-            # 如果真实API失败，回退到模拟分析
-            self.log_message("⚠️ 回退到模拟分析模式...", "WARNING")
-            self.root.after(0, lambda: self._simulate_gemini_analysis(video_path, output_dir, prompt))
+            import traceback
+            self.log_message(f"详细错误信息: {traceback.format_exc()}", "ERROR")
+
+            # 询问用户是否使用模拟分析
+            from tkinter import messagebox
+            use_simulation = messagebox.askyesno(
+                "Gemini API失败",
+                f"Gemini API调用失败:\n{str(e)}\n\n是否使用模拟分析模式继续？"
+            )
+
+            if use_simulation:
+                self.log_message("⚠️ 用户选择使用模拟分析模式...", "WARNING")
+                self.root.after(0, lambda: self._simulate_gemini_analysis(video_path, output_dir, prompt))
+            else:
+                self.log_message("❌ 用户取消分析", "INFO")
+                self.root.after(0, self._finish_video_analysis)
+
+    def test_gemini_connection(self):
+        """测试Gemini API连接"""
+        try:
+            self.log_message("🔗 开始测试Gemini连接...", "INFO")
+
+            # 从配置文件加载Gemini配置
+            from config import get_config
+            config = get_config()
+            gemini_config = config.gemini
+
+            self.log_message(f"📋 配置信息:", "INFO")
+            self.log_message(f"  - Cloudflare项目: {gemini_config.cloudflare_project_id}", "INFO")
+            self.log_message(f"  - Google项目: {gemini_config.google_project_id}", "INFO")
+            self.log_message(f"  - 模型: {gemini_config.model_name}", "INFO")
+            self.log_message(f"  - 基础URL: {gemini_config.base_url}", "INFO")
+
+            # 创建分析器并测试连接
+            from gemini_video_analyzer import create_gemini_analyzer
+
+            analyzer = create_gemini_analyzer(
+                cloudflare_project_id=gemini_config.cloudflare_project_id,
+                cloudflare_gateway_id=gemini_config.cloudflare_gateway_id,
+                google_project_id=gemini_config.google_project_id,
+                regions=gemini_config.regions,
+                model_name=gemini_config.model_name,
+                enable_cache=gemini_config.enable_cache,
+                cache_dir=gemini_config.cache_dir
+            )
+
+            # 测试获取访问令牌
+            self.log_message("🔑 测试获取访问令牌...", "INFO")
+            import asyncio
+            access_token = asyncio.run(analyzer.get_access_token())
+
+            if access_token:
+                self.log_message("✅ Gemini连接测试成功！", "SUCCESS")
+                self.log_message(f"🔑 访问令牌已获取 (长度: {len(access_token)} 字符)", "INFO")
+
+                from tkinter import messagebox
+                messagebox.showinfo("连接测试成功", "Gemini API连接正常，可以进行视频分析！")
+            else:
+                self.log_message("❌ 获取访问令牌失败", "ERROR")
+                from tkinter import messagebox
+                messagebox.showerror("连接测试失败", "无法获取访问令牌，请检查配置")
+
+        except Exception as e:
+            self.log_message(f"❌ Gemini连接测试失败: {e}", "ERROR")
+            import traceback
+            self.log_message(f"详细错误: {traceback.format_exc()}", "ERROR")
+
+            from tkinter import messagebox
+            messagebox.showerror("连接测试失败", f"Gemini API连接失败:\n{str(e)}")
 
     def _display_gemini_results(self, result, result_file):
         """显示Gemini分析结果"""
@@ -1720,8 +1790,330 @@ class ShotDetectionGUI:
         except Exception as e:
             self.log_message(f"❌ 视频归类失败: {e}", "ERROR")
 
-    def _determine_category(self, analysis_data):
-        """根据分析数据确定归类文件夹"""
+    def _gemini_classify_video(self, analysis_data):
+        """使用Gemini API和folder-matching提示词进行智能归类"""
+        try:
+            # 加载folder-matching提示词
+            from prompts_manager import PromptsManager
+            prompts_manager = PromptsManager()
+
+            # 构建内容描述
+            content_description = self._build_content_description(analysis_data)
+
+            # 定义可用的文件夹列表
+            folder_list = [
+                "product_display (产品展示)",
+                "product_usage (产品使用)",
+                "model_wearing (模特试穿)",
+                "ai_generated (AI素材)"
+            ]
+
+            # 获取格式化的提示词
+            folder_matching_prompt = prompts_manager.get_folder_matching_prompt(content_description, folder_list)
+
+            if not folder_matching_prompt:
+                self.log_message("⚠️ 无法加载folder-matching提示词", "WARNING")
+                return None
+
+            # 添加JSON格式要求
+            full_prompt = folder_matching_prompt + """
+
+请以JSON格式返回归类结果：
+```json
+{
+  "category": "推荐的文件夹名称",
+  "confidence": 0.95,
+  "reason": "归类原因说明",
+  "quality_level": "S级/A级/B级",
+  "features": ["关键特征1", "关键特征2"],
+  "recommendations": "优化建议"
+}
+```
+
+有且只有这四个，请从以下文件夹中选择最合适的：
+- product_display (产品展示)
+- product_usage (产品使用)
+- model_wearing (模特试穿)
+- ai_generated (AI素材)
+"""
+
+            # 调用Gemini API
+            classification_result = self._call_gemini_for_classification(full_prompt)
+
+            if classification_result:
+                self.log_message("✅ Gemini智能归类完成", "SUCCESS")
+                return classification_result
+            else:
+                self.log_message("⚠️ Gemini归类返回空结果", "WARNING")
+                return None
+
+        except Exception as e:
+            self.log_message(f"❌ Gemini归类失败: {e}", "ERROR")
+            return None
+
+    def _build_content_description(self, analysis_data):
+        """构建用于归类的内容描述"""
+        description_parts = []
+
+        # 添加摘要
+        summary = analysis_data.get('summary', '')
+        if summary:
+            description_parts.append(f"内容摘要: {summary}")
+
+        # 添加高光时刻信息
+        highlights = analysis_data.get('highlights', [])
+        if highlights:
+            highlight_desc = f"高光时刻数量: {len(highlights)}个"
+            highlight_types = [h.get('type', '') for h in highlights if h.get('type')]
+            if highlight_types:
+                highlight_desc += f", 类型: {', '.join(set(highlight_types))}"
+            description_parts.append(highlight_desc)
+
+        # 添加场景信息
+        scenes = analysis_data.get('scenes', [])
+        if scenes:
+            objects = []
+            actions = []
+            for scene in scenes:
+                objects.extend(scene.get('objects', []))
+                actions.extend(scene.get('actions', []))
+
+            if objects:
+                description_parts.append(f"检测物体: {', '.join(set(objects))}")
+            if actions:
+                description_parts.append(f"主要动作: {', '.join(set(actions))}")
+
+        # 添加情感信息
+        emotions = analysis_data.get('emotions', {})
+        overall_mood = emotions.get('overall_mood', '')
+        if overall_mood:
+            description_parts.append(f"整体情感: {overall_mood}")
+
+        # 添加质量信息
+        quality = analysis_data.get('quality', {})
+        video_quality = quality.get('video_quality', 0)
+        if video_quality:
+            description_parts.append(f"视频质量: {video_quality}/10")
+
+        lighting = quality.get('lighting', '')
+        if lighting:
+            description_parts.append(f"光线条件: {lighting}")
+
+        # 添加技术信息
+        technical = analysis_data.get('technical', {})
+        resolution = technical.get('resolution', '')
+        if resolution:
+            description_parts.append(f"分辨率: {resolution}")
+
+        camera_movements = technical.get('camera_movements', [])
+        if camera_movements:
+            description_parts.append(f"镜头运动: {', '.join(camera_movements)}")
+
+        return '\n'.join(description_parts)
+
+    def _call_gemini_for_classification(self, prompt):
+        """调用Gemini API进行归类分析"""
+        try:
+            self.log_message("🤖 正在调用Gemini API进行智能归类...", "INFO")
+
+            # 获取配置
+            from config import get_config
+            config = get_config()
+            gemini_config = config.gemini
+
+            # 创建Gemini分析器
+            from gemini_video_analyzer import create_gemini_analyzer
+
+            analyzer = create_gemini_analyzer(
+                cloudflare_project_id=gemini_config.cloudflare_project_id,
+                cloudflare_gateway_id=gemini_config.cloudflare_gateway_id,
+                google_project_id=gemini_config.google_project_id,
+                regions=gemini_config.regions,
+                model_name=gemini_config.model_name,
+                enable_cache=False,  # 归类不需要缓存
+                cache_dir=gemini_config.cache_dir
+            )
+
+            # 调用Gemini进行文本分析（不需要视频文件）
+            import asyncio
+
+            async def classify_with_gemini():
+                try:
+                    # 获取访问令牌
+                    access_token = await analyzer.get_access_token()
+
+                    # 创建客户端配置
+                    client_config = analyzer._create_gemini_client(access_token)
+
+                    # 构建请求数据
+                    request_data = {
+                        "contents": [
+                            {
+                                "role": "user",
+                                "parts": [
+                                    {
+                                        "text": prompt
+                                    }
+                                ]
+                            }
+                        ],
+                        "generationConfig": {
+                            "temperature": 0.1,
+                            "topK": 32,
+                            "topP": 1,
+                            "maxOutputTokens": 4096
+                        }
+                    }
+
+                    # 发送请求
+                    import requests
+                    generate_url = f"{client_config['gateway_url']}/{gemini_config.model_name}:generateContent"
+
+                    response = requests.post(
+                        generate_url,
+                        headers=client_config['headers'],
+                        json=request_data,
+                        timeout=30
+                    )
+
+                    self.log_message(f"📡 发送请求到: {generate_url}", "INFO")
+                    self.log_message(f"📊 请求状态码: {response.status_code}", "INFO")
+
+                    if response.status_code == 200:
+                        result = response.json()
+                        self.log_message(f"✅ 获得API响应", "SUCCESS")
+
+                        # 提取响应文本
+                        if 'candidates' in result and len(result['candidates']) > 0:
+                            candidate = result['candidates'][0]
+                            if 'content' in candidate and 'parts' in candidate['content']:
+                                response_text = candidate['content']['parts'][0]['text']
+                                self.log_message(f"📄 响应文本长度: {len(response_text)} 字符", "INFO")
+
+                                # 解析JSON响应
+                                import json
+                                import re
+
+                                # 提取JSON部分
+                                json_match = re.search(r'```json\s*(\{.*?\})\s*```', response_text, re.DOTALL)
+                                if json_match:
+                                    json_str = json_match.group(1)
+                                    self.log_message(f"✅ 找到JSON格式响应", "SUCCESS")
+                                    classification_result = json.loads(json_str)
+                                    return classification_result
+                                else:
+                                    # 尝试直接解析整个响应
+                                    try:
+                                        classification_result = json.loads(response_text)
+                                        self.log_message(f"✅ 直接解析JSON成功", "SUCCESS")
+                                        return classification_result
+                                    except Exception as parse_error:
+                                        self.log_message(f"⚠️ JSON解析失败: {parse_error}", "WARNING")
+                                        self.log_message(f"📄 原始响应: {response_text[:200]}...", "INFO")
+
+                                        # 如果无法解析JSON，返回基于文本的分析
+                                        return {
+                                            "category": "standard",
+                                            "confidence": 0.7,
+                                            "reason": f"AI分析结果: {response_text[:100]}...",
+                                            "quality_level": "B级",
+                                            "features": ["AI文本分析"],
+                                            "recommendations": "基于AI文本分析的归类建议"
+                                        }
+                            else:
+                                self.log_message(f"❌ 响应格式错误: 缺少content或parts", "ERROR")
+                                raise Exception("响应格式错误: 缺少content或parts")
+                        else:
+                            self.log_message(f"❌ 响应格式错误: 缺少candidates", "ERROR")
+                            raise Exception("响应格式错误: 缺少candidates")
+
+                    else:
+                        error_msg = f"API请求失败: {response.status_code} - {response.text}"
+                        self.log_message(f"❌ {error_msg}", "ERROR")
+                        raise Exception(error_msg)
+
+                except Exception as e:
+                    raise Exception(f"Gemini归类分析失败: {str(e)}")
+
+            # 执行异步调用
+            result = asyncio.run(classify_with_gemini())
+
+            if result:
+                category = result.get('category', 'standard')
+                confidence = result.get('confidence', 0.7)
+                reason = result.get('reason', 'AI智能归类')
+
+                self.log_message(f"🎯 Gemini归类结果: {category} (置信度: {confidence:.1%})", "SUCCESS")
+                self.log_message(f"💭 归类原因: {reason}", "INFO")
+
+                return result
+            else:
+                raise Exception("未获得有效的归类结果")
+
+        except Exception as e:
+            self.log_message(f"❌ Gemini归类分析失败: {e}", "ERROR")
+            self.log_message("⚠️ 将使用备用归类逻辑", "WARNING")
+
+            # 备用逻辑：基于关键词的简单归类
+            return self._fallback_classification(prompt)
+
+    def _fallback_classification(self, prompt):
+        """备用归类逻辑：基于关键词的简单归类"""
+        try:
+            content_lower = prompt.lower()
+
+            # 简单的关键词匹配逻辑
+            if "高光时刻数量: 4" in content_lower or "高光时刻数量: 3" in content_lower:
+                category = "premium_highlights"
+                confidence = 0.8
+                reason = "检测到多个高光时刻(≥3个)"
+            elif ("白底" in content_lower or "白色背景" in content_lower) and "模特" not in content_lower:
+                category = "product_display"
+                confidence = 0.75
+                reason = "检测到产品展示特征"
+            elif "模特" in content_lower and ("试穿" in content_lower or "转身" in content_lower):
+                category = "model_wearing"
+                confidence = 0.75
+                reason = "检测到模特试穿特征"
+            elif "高光时刻数量: 2" in content_lower or "高光时刻数量: 1" in content_lower:
+                category = "good_highlights"
+                confidence = 0.7
+                reason = "检测到少量高光时刻(1-2个)"
+            elif "活力" in content_lower or "活泼" in content_lower:
+                category = "active_style"
+                confidence = 0.65
+                reason = "检测到活泼风格特征"
+            elif "优雅" in content_lower or "专业" in content_lower:
+                category = "elegant_style"
+                confidence = 0.65
+                reason = "检测到优雅风格特征"
+            else:
+                category = "standard"
+                confidence = 0.5
+                reason = "使用默认分类"
+
+            return {
+                "category": category,
+                "confidence": confidence,
+                "reason": f"备用逻辑: {reason}",
+                "quality_level": "B级" if confidence > 0.7 else "C级",
+                "features": ["关键词匹配"],
+                "recommendations": "建议使用AI分析获得更准确的归类"
+            }
+
+        except Exception as e:
+            # 最后的备用方案
+            return {
+                "category": "standard",
+                "confidence": 0.5,
+                "reason": "备用归类失败，使用默认分类",
+                "quality_level": "C级",
+                "features": ["默认归类"],
+                "recommendations": "请检查系统配置"
+            }
+
+    def _determine_category_fallback(self, analysis_data):
+        """备用归类逻辑：根据分析数据确定归类文件夹"""
         # 获取高光时刻数量
         highlights = analysis_data.get('highlights', [])
         highlight_count = len(highlights)
@@ -1738,7 +2130,7 @@ class ShotDetectionGUI:
         technical = analysis_data.get('technical', {})
         resolution = technical.get('resolution', '').lower()
 
-        # 归类逻辑
+        # 备用归类逻辑
         if highlight_count >= 3 and video_quality >= 8:
             return "premium_highlights"  # 优质高光
         elif highlight_count >= 2:
@@ -1754,7 +2146,7 @@ class ShotDetectionGUI:
         else:
             return "standard"            # 标准分类
 
-    def _generate_classified_filename(self, original_file, analysis_data):
+    def _generate_classified_filename(self, original_file, analysis_data, category_info=None):
         """生成归类后的文件名"""
         # 获取原始文件名（不含扩展名）
         original_stem = original_file.stem
@@ -1771,15 +2163,32 @@ class ShotDetectionGUI:
         # 生成描述性前缀
         prefix_parts = []
 
-        if highlight_count >= 3:
-            prefix_parts.append("多高光")
-        elif highlight_count >= 1:
-            prefix_parts.append("有高光")
+        # 如果有Gemini归类信息，使用质量等级
+        if category_info and 'quality_level' in category_info:
+            quality_level = category_info['quality_level']
+            if quality_level == "S级":
+                prefix_parts.append("S级")
+            elif quality_level == "A级":
+                prefix_parts.append("A级")
+        else:
+            # 使用原有逻辑
+            if highlight_count >= 3:
+                prefix_parts.append("多高光")
+            elif highlight_count >= 1:
+                prefix_parts.append("有高光")
 
-        if video_quality >= 8:
-            prefix_parts.append("优质")
-        elif video_quality >= 7:
-            prefix_parts.append("良好")
+            if video_quality >= 8:
+                prefix_parts.append("优质")
+            elif video_quality >= 7:
+                prefix_parts.append("良好")
+
+        # 添加置信度信息（如果有）
+        if category_info and 'confidence' in category_info:
+            confidence = category_info['confidence']
+            if confidence >= 0.9:
+                prefix_parts.append("高信度")
+            elif confidence >= 0.8:
+                prefix_parts.append("中信度")
 
         # 组合文件名
         if prefix_parts:
@@ -1790,7 +2199,7 @@ class ShotDetectionGUI:
 
         return new_filename
 
-    def _save_classification_info(self, target_path, analysis_result, original_path):
+    def _save_classification_info(self, target_path, analysis_result, original_path, category_info=None):
         """保存归类信息"""
         try:
             info_file = target_path.with_suffix('.classification.json')
@@ -1800,6 +2209,7 @@ class ShotDetectionGUI:
                 "classified_path": str(target_path),
                 "classification_time": __import__('time').strftime("%Y-%m-%d %H:%M:%S"),
                 "category": target_path.parent.name,
+                "classification_method": "gemini_ai" if category_info else "fallback_logic",
                 "analysis_summary": {
                     "highlights_count": len(analysis_result.get('analysis_result', {}).get('highlights', [])),
                     "video_quality": analysis_result.get('analysis_result', {}).get('quality', {}).get('video_quality', 0),
@@ -1807,6 +2217,16 @@ class ShotDetectionGUI:
                     "summary": analysis_result.get('analysis_result', {}).get('summary', '')
                 }
             }
+
+            # 添加Gemini归类信息
+            if category_info:
+                classification_info["gemini_classification"] = {
+                    "confidence": category_info.get('confidence', 0),
+                    "reason": category_info.get('reason', ''),
+                    "quality_level": category_info.get('quality_level', ''),
+                    "features": category_info.get('features', []),
+                    "recommendations": category_info.get('recommendations', '')
+                }
 
             with open(info_file, 'w', encoding='utf-8') as f:
                 import json

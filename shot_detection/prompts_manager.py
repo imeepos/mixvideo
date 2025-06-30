@@ -101,31 +101,42 @@ class PromptsManager:
         prompt_config = self.get_prompt('video_analysis')
         return prompt_config.content if prompt_config else ""
     
-    def get_folder_matching_prompt(self, content_description: str, folder_list: list) -> str:
+    def get_folder_matching_prompt(self, content_description: str = None, folder_list: list = None) -> str:
         """
-        获取格式化的文件夹匹配提示词
-        
+        获取文件夹匹配提示词
+
         Args:
-            content_description: 视频内容描述
-            folder_list: 可选文件夹列表
-            
+            content_description: 视频内容描述（可选）
+            folder_list: 可选文件夹列表（可选）
+
         Returns:
-            格式化后的提示词
+            格式化后的提示词或原始提示词
         """
         prompt_config = self.get_prompt('folder_matching')
         if not prompt_config:
             return ""
-        
+
+        # 如果没有提供参数，返回原始提示词
+        if content_description is None:
+            return prompt_config.content
+
+        # 如果没有提供文件夹列表，使用默认列表
+        if folder_list is None:
+            folder_list = ["产品展示", "模特试穿", "使用场景", "AI素材"]
+
         # 格式化文件夹列表
         formatted_folders = '\n'.join([f"{i+1}. {folder}" for i, folder in enumerate(folder_list)])
-        
+
         # 替换变量
-        formatted_prompt = prompt_config.content.format(
-            contentDescription=content_description,
-            folderList=formatted_folders
-        )
-        
-        return formatted_prompt
+        try:
+            formatted_prompt = prompt_config.content.format(
+                contentDescription=content_description,
+                folderList=formatted_folders
+            )
+            return formatted_prompt
+        except KeyError:
+            # 如果格式化失败，返回原始内容
+            return prompt_config.content
     
     def list_prompts(self) -> Dict[str, str]:
         """列出所有可用的提示词"""

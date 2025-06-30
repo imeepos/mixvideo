@@ -110,6 +110,13 @@ gemini:
   # 模型配置
   model_name: "gemini-2.5-flash"
 
+  # API 配置
+  base_url: "https://bowongai-dev--bowong-ai-video-gemini-fastapi-webapp.modal.run"
+  bearer_token: "bowong7777"
+  timeout_seconds: 120
+  max_retries: 3
+  retry_delay_seconds: 5
+
   # 区域配置（支持多区域负载均衡）
   regions:
     - "us-central1"
@@ -120,11 +127,6 @@ gemini:
   enable_cache: true
   cache_dir: ".cache/gemini_analysis"
   cache_expiry_days: 7
-
-  # API 配置
-  timeout_seconds: 120
-  max_retries: 3
-  retry_delay_seconds: 5
 
   # 文件上传配置
   max_file_size_mb: 100
