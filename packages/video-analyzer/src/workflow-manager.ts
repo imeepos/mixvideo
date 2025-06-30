@@ -112,8 +112,8 @@ export class WorkflowManager {
     // 初始化组件
     this.scanner = new VideoScanner();
     this.uploader = new VideoUploader({
-      bucketName: 'default-bucket',
-      filePrefix: 'analysis/'
+      bucketName: 'dy-media-storage',
+      filePrefix: 'analysis'
     });
     this.analysisEngine = new AnalysisEngine();
     this.fileOrganizer = new FileOrganizer(this.config.fileOrganizerConfig);

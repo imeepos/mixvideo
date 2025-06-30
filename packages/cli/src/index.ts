@@ -15,10 +15,10 @@
  * 4. 查看任务状态
  */
 import { parse } from '@mixvideo/jianying'
-import { readdir, writeFile } from 'fs/promises';
+import { readdir, writeFile, mkdir } from 'fs/promises';
 import path, { join } from 'path';
 import { Command } from 'commander'
-import { createVideoAnalyzer } from '@mixvideo/video-analyzer';
+import { createVideoAnalyzer, type AnalysisMode, type AnalysisOptions } from '@mixvideo/video-analyzer';
 import fs from 'fs'
 const root = process.cwd()
 async function main() {
@@ -49,12 +49,28 @@ async function main() {
                 const root = process.cwd()
                 // 创建视频分析器实例
                 const analyzer = createVideoAnalyzer({
+                    analysis: {
+                        defaultMode: 'gemini' as const,
+                        defaultOptions: {
+                            quality: 'high',
+                            language: 'zh-CN'
+                        }
+                    },
                     upload: {
                         bucketName: 'dy-media-storage',
                         filePrefix: 'processed',
                         maxRetries: 3
+                    },
+                    workflow: {
+                        minConfidenceForMove: 0.7,
+                        fileOrganizerConfig: {
+                            moveFiles: false, // 复制而不是移动，更安全
+                            namingMode: 'smart',
+                            createDirectories: true,
+                            conflictResolution: 'rename'
+                        }
                     }
-                });
+                } as any); // 临时使用 any 类型，等待类型更新
 
                 // 资源目录路径
                 const resourcesDir = path.join(root, dir);
@@ -68,92 +84,36 @@ async function main() {
                 }
 
                 // 配置分析模式 - 使用 Gemini 进行综合分析
-                const analysisMode = {
+                const analysisMode: AnalysisMode = {
                     type: 'gemini' as const,
                     model: 'gemini-2.5-flash',
-                    analysisType: 'comprehensive' as const
+                    options: {}
                 };
 
                 // 分析选项
-                const analysisOptions = {
-                    enableProductAnalysis: true,  // 启用产品分析
-                    maxScenes: 20,               // 最大场景数
-                    confidenceThreshold: 0.7     // 置信度阈值
-                };
-
-                // 进度回调
-                const onProgress = (progress: any) => {
-                    console.log(`📊 ${progress.step}: ${progress.progress}% (${progress.currentFile || ''})`);
-                };
+                const analysisOptions: AnalysisOptions = {};
 
                 console.log(`🔍 扫描目录: ${resourcesDir}`);
+                const targetDir = join(root, 'outputs');
+                console.log(` 结果目录: ${targetDir}`);
 
-                // 执行完整的分析工作流
-                const result = await analyzer.analyzeDirectoryComplete(
-                    resourcesDir,
-                    analysisMode,
-                    {
-                        // 扫描选项
-                        scanOptions: {
-                            recursive: true,
-                            maxFileSize: 1024 * 1024 * 1024, // 1GB
-                            minFileSize: 1024 // 1KB
-                        },
-
-                        // 分析选项
-                        analysisOptions,
-
-                        // 文件夹匹配配置
-                        folderConfig: {
-                            baseDirectory: resourcesDir,
-                            maxDepth: 2,
-                            minConfidence: 0.4,
-                            enableSemanticAnalysis: true
-                        },
-
-                        // 报告生成选项
-                        reportOptions: {
-                            format: 'xml',
-                            outputPath: path.join(__dirname, '../analysis-report.xml'),
-                            includeFolderMatching: true,
-                            includeDetailedAnalysis: true,
-                            title: 'MixVideo 视频分析报告'
-                        },
-
-                        // 进度跟踪
-                        onProgress
-                    }
-                );
-
-                // 输出结果统计
-                console.log('\n🎉 分析完成！');
-                console.log(`📹 分析视频数量: ${result.analysisResults.length}`);
-                console.log(`📂 文件夹匹配数量: ${Object.keys(result.folderMatches).length}`);
-                console.log(`📄 报告保存位置: ${result.reportPath}`);
-
-                // 显示详细统计
-                const stats = analyzer.getAnalysisStatistics(result.analysisResults);
-                console.log('\n📊 详细统计:');
-                console.log(`- 总处理时间: ${stats.totalProcessingTime}ms`);
-                console.log(`- 总场景数: ${stats.totalScenes}`);
-                console.log(`- 总对象数: ${stats.totalObjects}`);
-                console.log(`- 平均质量分数: ${stats.averageQualityScore.toFixed(2)}`);
-
-                // 显示文件夹匹配建议
-                if (Object.keys(result.folderMatches).length > 0) {
-                    console.log('\n📁 智能文件夹匹配建议:');
-                    for (const [videoPath, matches] of Object.entries(result.folderMatches)) {
-                        const videoName = path.basename(videoPath);
-                        console.log(`\n🎬 ${videoName}:`);
-                        matches.slice(0, 3).forEach((match, index) => {
-                            console.log(`  ${index + 1}. ${match.folderPath} (置信度: ${(match.confidence * 100).toFixed(1)}%)`);
-                            if (match.reasons && match.reasons.length > 0) {
-                                console.log(`     理由: ${match.reasons.join(', ')}`);
-                            }
-                        });
-                    }
+                // 确保输出目录存在
+                try {
+                    await mkdir(targetDir, { recursive: true });
+                } catch (error) {
+                    // 目录可能已存在，忽略错误
                 }
 
+                // 执行完整的分析工作流
+                const result = await analyzer.processDirectory(
+                    resourcesDir,
+                    targetDir,
+                    analysisMode,
+                    {
+                        analysisOptions,
+                    }
+                );
+                console.log(result)
             } catch (error) {
                 console.error('❌ 分析过程中出现错误:', error);
                 process.exit(1);

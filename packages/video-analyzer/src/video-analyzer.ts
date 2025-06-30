@@ -496,8 +496,8 @@ export class VideoAnalyzer {
    */
   private initializeUploader(): void {
     const uploadConfig: UploadConfig = {
-      bucketName: this.config.upload?.bucketName || 'default-bucket',
-      filePrefix: this.config.upload?.filePrefix || 'video-analysis/',
+      bucketName: this.config.upload?.bucketName || 'dy-media-storage',
+      filePrefix: this.config.upload?.filePrefix || 'video-analysis',
       chunkSize: this.config.upload?.chunkSize,
       maxRetries: this.config.upload?.maxRetries,
       onProgress: (_progress) => {
@@ -565,6 +565,6 @@ export class VideoAnalyzer {
 /**
  * Convenience function to create VideoAnalyzer instance
  */
-export function createVideoAnalyzer(config?: VideoAnalyzerConfig): VideoAnalyzer {
+export function createVideoAnalyzer(config?: ExtendedVideoAnalyzerConfig): VideoAnalyzer {
   return new VideoAnalyzer(config);
 }

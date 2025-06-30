@@ -15,6 +15,9 @@ export * from './report-generator';
 export * from './frame-analyzer';
 export * from './video-analyzer';
 
+// 导出扩展配置类型
+export type { ExtendedVideoAnalyzerConfig } from './video-analyzer';
+
 // 导出简化的提示词系统
 export * from './simple-prompts';
 
