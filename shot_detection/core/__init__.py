@@ -14,6 +14,8 @@ from .i18n import *
 from .plugins import *
 from .security import *
 from .config import *
+from .docs import *
+from .deployment import *
 
 __version__ = "2.0.0"
 __all__ = [
@@ -100,4 +102,24 @@ __all__ = [
     "EnvironmentConfig",
     "ProfileManager",
     "ConfigProfile",
+
+    # Documentation Generation
+    "DocumentationGenerator",
+    "DocConfig",
+    "APIDocumentationGenerator",
+    "APIDocConfig",
+    "UserGuideGenerator",
+    "GuideConfig",
+    "CodeAnalyzer",
+    "AnalysisConfig",
+
+    # Deployment and Distribution
+    "PackageManager",
+    "PackageConfig",
+    "InstallerGenerator",
+    "InstallerConfig",
+    "DockerBuilder",
+    "DockerConfig",
+    "ReleaseManager",
+    "ReleaseConfig",
 ]
