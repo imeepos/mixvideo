@@ -11,29 +11,47 @@ import json
 from loguru import logger
 
 from .base_plugin import BasePlugin, PluginError
+from .plugin_interface import PluginInterface, PluginType, PluginStatus
+from .plugin_loader import PluginLoader
+from .plugin_registry import PluginRegistry
+from .plugin_config import PluginConfig
 
 
 class PluginManager:
-    """插件管理器"""
-    
-    def __init__(self, plugin_dir: Optional[Path] = None):
+    """增强的插件管理器"""
+
+    def __init__(self, plugin_dir: Optional[Path] = None, config: Optional[Dict[str, Any]] = None):
         """
         初始化插件管理器
-        
+
         Args:
             plugin_dir: 插件目录路径
+            config: 插件管理器配置
         """
         self.plugin_dir = plugin_dir or Path("plugins")
-        self.plugins: Dict[str, BasePlugin] = {}
-        self.plugin_classes: Dict[str, Type[BasePlugin]] = {}
+        self.config = config or {}
         self.logger = logger.bind(component="PluginManager")
-        
+
         # 确保插件目录存在
         self.plugin_dir.mkdir(parents=True, exist_ok=True)
-        
+
+        # 初始化组件
+        self.plugin_config = PluginConfig(str(self.plugin_dir / "config"))
+        self.plugin_loader = PluginLoader(self.plugin_config)
+        self.plugin_registry = PluginRegistry(str(self.plugin_dir / "registry.json"))
+
+        # 兼容性：保留原有接口
+        self.plugins: Dict[str, BasePlugin] = {}
+        self.plugin_classes: Dict[str, Type[BasePlugin]] = {}
+
+        # 新接口：插件实例
+        self.plugin_instances: Dict[str, PluginInterface] = {}
+
         # 配置目录
         self.config_dir = self.plugin_dir / "configs"
         self.config_dir.mkdir(parents=True, exist_ok=True)
+
+        self.logger.info("Enhanced plugin manager initialized")
     
     def discover_plugins(self) -> List[str]:
         """
@@ -339,3 +357,255 @@ class PluginManager:
         except Exception as e:
             self.logger.error(f"Failed to load plugin states: {e}")
             return False
+
+    # 新的增强方法
+    def discover_plugins_enhanced(self, directories: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+        """
+        增强的插件发现功能
+
+        Args:
+            directories: 搜索目录列表
+
+        Returns:
+            发现的插件信息列表
+        """
+        return self.plugin_loader.discover_plugins(directories)
+
+    def load_plugin_enhanced(self, plugin_path: str, plugin_name: Optional[str] = None) -> Optional[PluginInterface]:
+        """
+        增强的插件加载功能
+
+        Args:
+            plugin_path: 插件路径
+            plugin_name: 插件名称
+
+        Returns:
+            加载的插件实例
+        """
+        plugin = self.plugin_loader.load_plugin(plugin_path, plugin_name)
+
+        if plugin:
+            # 注册到注册表
+            self.plugin_registry.register_plugin(plugin, plugin_path)
+
+            # 存储实例
+            self.plugin_instances[plugin.plugin_id] = plugin
+
+            self.logger.info(f"Enhanced plugin loaded: {plugin.plugin_id}")
+
+        return plugin
+
+    def unload_plugin_enhanced(self, plugin_id: str) -> bool:
+        """
+        增强的插件卸载功能
+
+        Args:
+            plugin_id: 插件ID
+
+        Returns:
+            是否卸载成功
+        """
+        success = self.plugin_loader.unload_plugin(plugin_id)
+
+        if success:
+            # 从注册表移除
+            self.plugin_registry.unregister_plugin(plugin_id)
+
+            # 移除实例
+            if plugin_id in self.plugin_instances:
+                del self.plugin_instances[plugin_id]
+
+        return success
+
+    def get_plugins_by_type_enhanced(self, plugin_type: PluginType) -> List[PluginInterface]:
+        """
+        根据类型获取插件
+
+        Args:
+            plugin_type: 插件类型
+
+        Returns:
+            指定类型的插件列表
+        """
+        return self.plugin_loader.get_plugin_by_type(plugin_type)
+
+    def get_plugin_info_enhanced(self, plugin_id: str) -> Optional[Dict[str, Any]]:
+        """
+        获取插件信息
+
+        Args:
+            plugin_id: 插件ID
+
+        Returns:
+            插件信息
+        """
+        return self.plugin_registry.get_plugin_info(plugin_id)
+
+    def search_plugins_enhanced(self, query: str) -> Dict[str, Dict[str, Any]]:
+        """
+        搜索插件
+
+        Args:
+            query: 搜索查询
+
+        Returns:
+            匹配的插件信息
+        """
+        return self.plugin_registry.search_plugins(query)
+
+    def get_plugin_dependencies_enhanced(self, plugin_id: str) -> List[str]:
+        """
+        获取插件依赖
+
+        Args:
+            plugin_id: 插件ID
+
+        Returns:
+            依赖列表
+        """
+        return self.plugin_registry.get_plugin_dependencies(plugin_id)
+
+    def validate_plugin_dependencies_enhanced(self, plugin_id: str) -> tuple[bool, List[str]]:
+        """
+        验证插件依赖
+
+        Args:
+            plugin_id: 插件ID
+
+        Returns:
+            (是否有效, 缺失的依赖列表)
+        """
+        return self.plugin_registry.validate_dependencies(plugin_id)
+
+    def get_load_order_enhanced(self, plugin_ids: Optional[List[str]] = None) -> List[str]:
+        """
+        获取插件加载顺序
+
+        Args:
+            plugin_ids: 要排序的插件ID列表
+
+        Returns:
+            排序后的插件ID列表
+        """
+        return self.plugin_registry.get_load_order(plugin_ids)
+
+    def load_plugins_in_order(self, plugin_paths: Dict[str, str]) -> Dict[str, bool]:
+        """
+        按依赖顺序加载插件
+
+        Args:
+            plugin_paths: 插件ID到路径的映射
+
+        Returns:
+            加载结果
+        """
+        results = {}
+
+        # 首先发现所有插件
+        for plugin_id, plugin_path in plugin_paths.items():
+            plugin = self.load_plugin_enhanced(plugin_path, plugin_id)
+            results[plugin_id] = plugin is not None
+
+        # 获取加载顺序
+        load_order = self.get_load_order_enhanced(list(plugin_paths.keys()))
+
+        # 按顺序初始化插件
+        for plugin_id in load_order:
+            if plugin_id in self.plugin_instances:
+                plugin = self.plugin_instances[plugin_id]
+                config = self.plugin_config.get_plugin_config(plugin_id)
+
+                try:
+                    if not plugin.initialize(config):
+                        self.logger.error(f"Failed to initialize plugin: {plugin_id}")
+                        results[plugin_id] = False
+                    else:
+                        self.plugin_registry.update_plugin_status(plugin_id, PluginStatus.ACTIVE)
+                except Exception as e:
+                    self.logger.error(f"Plugin initialization error {plugin_id}: {e}")
+                    results[plugin_id] = False
+                    self.plugin_registry.update_plugin_status(plugin_id, PluginStatus.ERROR)
+
+        return results
+
+    def auto_discover_and_load(self) -> Dict[str, bool]:
+        """
+        自动发现并加载插件
+
+        Returns:
+            加载结果
+        """
+        # 发现插件
+        discovered = self.discover_plugins_enhanced()
+
+        # 构建路径映射
+        plugin_paths = {}
+        for plugin_info in discovered:
+            plugin_paths[plugin_info['name']] = plugin_info['path']
+
+        # 按顺序加载
+        return self.load_plugins_in_order(plugin_paths)
+
+    def get_plugin_statistics(self) -> Dict[str, Any]:
+        """获取插件统计信息"""
+        registry_stats = self.plugin_registry.get_registry_statistics()
+        loader_stats = self.plugin_loader.get_load_statistics()
+
+        return {
+            'registry': registry_stats,
+            'loader': loader_stats,
+            'loaded_plugins': len(self.plugin_instances),
+            'legacy_plugins': len(self.plugins)
+        }
+
+    def export_plugin_data(self, export_path: str) -> bool:
+        """
+        导出插件数据
+
+        Args:
+            export_path: 导出路径
+
+        Returns:
+            是否导出成功
+        """
+        try:
+            export_data = {
+                'statistics': self.get_plugin_statistics(),
+                'registry': self.plugin_registry.get_all_plugins(),
+                'config': self.plugin_config.get_global_config(),
+                'export_timestamp': self._get_current_timestamp()
+            }
+
+            with open(export_path, 'w', encoding='utf-8') as f:
+                json.dump(export_data, f, indent=2, ensure_ascii=False)
+
+            self.logger.info(f"Plugin data exported to: {export_path}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to export plugin data: {e}")
+            return False
+
+    def _get_current_timestamp(self) -> str:
+        """获取当前时间戳"""
+        import datetime
+        return datetime.datetime.now().isoformat()
+
+    def cleanup_enhanced(self):
+        """增强的清理功能"""
+        try:
+            # 清理新组件
+            self.plugin_loader.cleanup()
+            self.plugin_registry.cleanup()
+            self.plugin_config.cleanup()
+
+            # 清理实例
+            self.plugin_instances.clear()
+
+            # 调用原有清理
+            self.cleanup_all()
+
+            self.logger.info("Enhanced plugin manager cleanup completed")
+
+        except Exception as e:
+            self.logger.error(f"Enhanced cleanup failed: {e}")

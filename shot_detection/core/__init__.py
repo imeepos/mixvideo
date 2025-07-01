@@ -8,6 +8,12 @@ from .processing import *
 from .export import *
 from .services import *
 from .performance import *
+from .advanced import *
+from .ux import *
+from .i18n import *
+from .plugins import *
+from .security import *
+from .config import *
 
 __version__ = "2.0.0"
 __all__ = [
@@ -39,4 +45,59 @@ __all__ = [
     "PerformanceMonitor",
     "CacheOptimizer",
     "ResourceManager",
+
+    # Advanced Features
+    "AIDetector",
+    "ModelManager",
+    "CloudProcessor",
+    "CloudStorage",
+    "WorkflowAutomation",
+    "TaskScheduler",
+    "AdvancedAnalytics",
+    "ReportGenerator",
+
+    # User Experience
+    "AccessibilityManager",
+    "ThemeManager",
+    "ShortcutManager",
+    "TutorialManager",
+    "FeedbackCollector",
+    "UserPreferences",
+
+    # Internationalization
+    "Translator",
+    "LanguageManager",
+    "LocaleUtils",
+
+    # Plugin System
+    "PluginManager",
+    "BasePlugin",
+    "DetectorPlugin",
+    "ProcessorPlugin",
+    "PluginLoader",
+    "PluginRegistry",
+    "PluginInterface",
+    "PluginConfig",
+
+    # Security
+    "AuthenticationManager",
+    "UserManager",
+    "AuthorizationManager",
+    "PermissionManager",
+    "EncryptionManager",
+    "SecureStorage",
+    "AuditLogger",
+    "SecurityMonitor",
+    "InputValidator",
+    "SecurityValidator",
+
+    # Configuration Management
+    "ConfigManager",
+    "ConfigValidator",
+    "SettingsManager",
+    "UserSettings",
+    "EnvironmentManager",
+    "EnvironmentConfig",
+    "ProfileManager",
+    "ConfigProfile",
 ]

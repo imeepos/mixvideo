@@ -100,7 +100,7 @@ gui:
     update_interval: 100
   remember_window_position: true
   remember_window_size: true
-  theme: classic
+  theme: clam
   window:
     center_on_screen: true
     height: 800
@@ -214,7 +214,7 @@ processing:
   quality_preset: medium
   segmentation:
     enable_smart_split: true
-    max_segment_duration: 300.0
+    max_segment_duration: 3.0
     min_segment_duration: 1.0
     silence_threshold: -40
     split_on_silence: false

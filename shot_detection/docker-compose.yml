@@ -1,0 +1,191 @@
+# Shot Detection v2.0 Docker Compose
+# 完整的开发和部署环境
+
+version: '3.8'
+
+services:
+  # 主应用服务
+  shot-detection:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shot-detection-app
+    restart: unless-stopped
+    volumes:
+      - ./data:/home/app/data
+      - ./output:/home/app/output
+      - ./config:/home/app/.shot_detection
+      - ./logs:/home/app/.shot_detection/logs
+    environment:
+      - SHOT_DETECTION_ENV=production
+      - SHOT_DETECTION_LOG_LEVEL=INFO
+      - SHOT_DETECTION_CONFIG_PATH=/home/app/.shot_detection/config_v2.yaml
+    ports:
+      - "8000:8000"
+    networks:
+      - shot-detection-network
+    depends_on:
+      - redis
+      - postgres
+    healthcheck:
+      test: ["CMD", "python", "-c", "import shot_detection; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: shot-detection-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - shot-detection-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: shot-detection-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: shot_detection
+      POSTGRES_USER: shot_detection
+      POSTGRES_PASSWORD: shot_detection_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - shot-detection-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shot_detection"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Nginx反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: shot-detection-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./static:/var/www/static
+    networks:
+      - shot-detection-network
+    depends_on:
+      - shot-detection
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 监控服务 - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: shot-detection-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - shot-detection-network
+
+  # 监控服务 - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: shot-detection-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - shot-detection-network
+    depends_on:
+      - prometheus
+
+  # 任务队列 - Celery Worker
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shot-detection-celery
+    restart: unless-stopped
+    command: celery -A shot_detection.celery_app worker --loglevel=info
+    volumes:
+      - ./data:/home/app/data
+      - ./output:/home/app/output
+      - ./config:/home/app/.shot_detection
+    environment:
+      - SHOT_DETECTION_ENV=production
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    networks:
+      - shot-detection-network
+    depends_on:
+      - redis
+      - postgres
+
+  # 任务监控 - Flower
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shot-detection-flower
+    restart: unless-stopped
+    command: celery -A shot_detection.celery_app flower
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    networks:
+      - shot-detection-network
+    depends_on:
+      - redis
+      - celery-worker
+
+# 网络配置
+networks:
+  shot-detection-network:
+    driver: bridge
+
+# 数据卷
+volumes:
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

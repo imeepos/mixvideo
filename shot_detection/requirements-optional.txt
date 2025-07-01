@@ -1,0 +1,52 @@
+# Shot Detection v2.0 Optional Dependencies
+# 可选功能依赖
+
+# AI/ML框架
+tensorflow>=2.8.0
+torch>=1.10.0
+torchvision>=0.11.0
+transformers>=4.20.0
+huggingface-hub>=0.14.0
+
+# 云服务
+boto3>=1.20.0
+azure-storage-blob>=12.0.0
+google-cloud-storage>=2.0.0
+google-cloud-videointelligence>=2.11.0
+
+# 高级视频处理
+ffmpeg-python>=0.2.0
+moviepy>=1.0.3
+av>=10.0.0
+
+# GPU加速
+cupy-cuda11x>=11.0.0; platform_machine=="x86_64"
+numba>=0.56.0
+
+# 数据库支持
+sqlalchemy>=2.0.0
+sqlite3  # 内置模块
+
+# 消息队列
+celery>=5.2.0
+redis>=4.5.0
+
+# 监控和指标
+prometheus-client>=0.16.0
+grafana-api>=1.0.3
+
+# 高级可视化
+bokeh>=3.1.0
+altair>=5.0.0
+
+# 网络服务
+fastapi>=0.95.0
+uvicorn>=0.21.0
+websockets>=11.0.0
+
+# 容器化
+docker>=6.0.0
+
+# 分布式计算
+dask>=2023.4.0
+ray>=2.3.0
