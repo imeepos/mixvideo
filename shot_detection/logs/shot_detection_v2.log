@@ -1,0 +1,151 @@
+2025-07-01 13:23:31.956 | INFO     | main_v2:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 13:23:31.956 | INFO     | main_v2:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 13:23:31.956 | INFO     | main_v2:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:26:49.163 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 13:26:49.163 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 13:26:49.163 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:26:49.187 | ERROR    | __main__:run_gui:49 - GUI dependencies not available: cannot import name 'load_config' from 'config' (/home/imeep/mixvideo/shot_detection/config/__init__.py)
+2025-07-01 13:31:16.783 | INFO     | main_v2:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 13:31:16.783 | INFO     | main_v2:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 13:31:16.783 | INFO     | main_v2:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:40:03.008 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 13:40:03.009 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 13:40:03.009 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:40:03.014 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 13:40:03.065 | ERROR    | gui.main_window:create_placeholder_tabs:102 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 13:40:03.068 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 13:40:03.098 | INFO     | gui.main_window:run:292 - Starting main loop
+2025-07-01 13:40:27.598 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:40:27.598 | INFO     | gui.main_window:on_closing:225 - Application closing
+2025-07-01 13:41:04.407 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 13:41:04.407 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 13:41:04.407 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:41:04.419 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 13:41:04.462 | ERROR    | gui.main_window:create_placeholder_tabs:102 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 13:41:04.464 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 13:41:04.489 | INFO     | gui.main_window:run:292 - Starting main loop
+2025-07-01 13:41:21.246 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:41:21.246 | INFO     | gui.main_window:on_closing:225 - Application closing
+2025-07-01 13:43:54.243 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 13:43:54.243 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 13:43:54.243 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:43:54.255 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 13:43:54.293 | ERROR    | gui.main_window:create_placeholder_tabs:102 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 13:43:54.295 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 13:43:54.318 | INFO     | gui.main_window:run:292 - Starting main loop
+2025-07-01 13:44:14.453 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:44:14.453 | INFO     | gui.main_window:on_closing:225 - Application closing
+2025-07-01 13:49:42.792 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 13:49:42.793 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 13:49:42.793 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:49:42.798 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 13:49:42.843 | ERROR    | gui.main_window:create_placeholder_tabs:102 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 13:49:42.846 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 13:49:42.869 | INFO     | gui.main_window:run:292 - Starting main loop
+2025-07-01 13:50:18.210 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:50:18.210 | INFO     | gui.main_window:on_closing:225 - Application closing
+2025-07-01 13:52:50.444 | INFO     | main_v2:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 13:52:50.444 | INFO     | main_v2:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 13:52:50.444 | INFO     | main_v2:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:53:48.844 | INFO     | main_v2:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 13:53:48.844 | INFO     | main_v2:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 13:53:48.844 | INFO     | main_v2:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 13:54:17.687 | INFO     | main_v2:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 13:54:17.687 | INFO     | main_v2:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 13:54:17.688 | INFO     | main_v2:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 14:42:11.201 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 14:42:11.202 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 14:42:11.202 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 14:42:11.215 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 14:42:11.259 | ERROR    | gui.main_window:create_placeholder_tabs:102 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 14:42:11.260 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 14:42:11.283 | INFO     | gui.main_window:run:292 - Starting main loop
+2025-07-01 14:42:16.634 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 14:42:16.634 | INFO     | gui.main_window:on_closing:225 - Application closing
+2025-07-01 14:47:24.521 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 14:47:24.522 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 14:47:24.522 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 14:47:24.540 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 14:47:24.581 | ERROR    | gui.main_window:create_placeholder_tabs:102 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 14:47:24.583 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 14:47:24.606 | INFO     | gui.main_window:run:292 - Starting main loop
+2025-07-01 14:51:27.714 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 14:51:27.715 | INFO     | gui.main_window:on_closing:225 - Application closing
+2025-07-01 14:51:29.774 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 14:51:29.774 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 14:51:29.774 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 14:51:29.790 | WARNING  | __main__:run_gui:53 - New GUI not available, falling back to legacy: No module named 'gui.dialogs.settings_dialog'
+2025-07-01 14:51:29.809 | ERROR    | __main__:run_gui:62 - GUI dependencies not available: cannot import name 'load_config' from 'config' (/home/imeep/mixvideo/shot_detection/config/__init__.py)
+2025-07-01 14:58:43.545 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 14:58:43.545 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 14:58:43.545 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 14:58:43.562 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 14:58:43.604 | ERROR    | gui.main_window:create_placeholder_tabs:103 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 14:58:43.605 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 14:58:43.626 | INFO     | gui.main_window:run:293 - Starting main loop
+2025-07-01 14:59:07.385 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 14:59:11.564 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 14:59:15.875 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 14:59:17.400 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 14:59:18.338 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:00:43.425 | INFO     | __main__:main:132 - Application interrupted by user
+2025-07-01 15:20:09.450 | INFO     | main_v2:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 15:20:09.450 | INFO     | main_v2:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 15:20:09.450 | INFO     | main_v2:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:22:04.084 | INFO     | main_v2:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 15:22:04.085 | INFO     | main_v2:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 15:22:04.085 | INFO     | main_v2:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:25:23.411 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 15:25:23.411 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 15:25:23.411 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:25:23.424 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 15:25:23.467 | ERROR    | gui.main_window:create_placeholder_tabs:103 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 15:25:23.468 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 15:25:23.491 | INFO     | gui.main_window:run:293 - Starting main loop
+2025-07-01 15:25:34.868 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:25:34.868 | INFO     | gui.main_window:on_closing:226 - Application closing
+2025-07-01 15:29:14.875 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 15:29:14.875 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 15:29:14.875 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:29:14.890 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 15:29:14.932 | ERROR    | gui.main_window:create_placeholder_tabs:103 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 15:29:14.934 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 15:29:14.955 | INFO     | gui.main_window:run:293 - Starting main loop
+2025-07-01 15:29:27.427 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:29:27.428 | INFO     | gui.main_window:on_closing:226 - Application closing
+2025-07-01 15:34:28.270 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 15:34:28.271 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 15:34:28.271 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:34:28.289 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 15:34:28.331 | ERROR    | gui.main_window:create_placeholder_tabs:103 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 15:34:28.333 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 15:34:28.354 | INFO     | gui.main_window:run:293 - Starting main loop
+2025-07-01 15:36:03.861 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:36:03.861 | INFO     | gui.main_window:on_closing:226 - Application closing
+2025-07-01 15:38:42.782 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 15:38:42.783 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 15:38:42.783 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:38:42.788 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 15:38:42.813 | ERROR    | gui.main_window:create_placeholder_tabs:103 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 15:38:42.815 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 15:38:42.835 | INFO     | gui.main_window:run:293 - Starting main loop
+2025-07-01 15:40:08.857 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:40:08.857 | INFO     | gui.main_window:on_closing:226 - Application closing
+2025-07-01 15:54:50.363 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 15:54:50.363 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 15:54:50.363 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:54:50.378 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 15:54:50.421 | ERROR    | gui.main_window:create_placeholder_tabs:103 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 15:54:50.423 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 15:54:50.450 | INFO     | gui.main_window:run:293 - Starting main loop
+2025-07-01 15:54:57.167 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:54:57.168 | INFO     | gui.main_window:on_closing:226 - Application closing
+2025-07-01 15:58:27.526 | INFO     | __main__:setup_environment:32 - Shot Detection v2.0 starting...
+2025-07-01 15:58:27.527 | INFO     | __main__:setup_environment:33 - Project root: /home/imeep/mixvideo/shot_detection
+2025-07-01 15:58:27.527 | INFO     | __main__:setup_environment:34 - Config path: /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:58:27.541 | INFO     | __main__:run_gui:46 - Starting new GUI application
+2025-07-01 15:58:27.588 | ERROR    | gui.main_window:create_placeholder_tabs:103 - Error creating tabs: 'VideoTab' object has no attribute 'video_path'
+2025-07-01 15:58:27.590 | INFO     | gui.main_window:__init__:33 - Main window initialized
+2025-07-01 15:58:27.612 | INFO     | gui.main_window:run:293 - Starting main loop
+2025-07-01 15:58:30.141 | INFO     | config.manager:save_config:90 - Saved config to /home/imeep/mixvideo/shot_detection/config.yaml
+2025-07-01 15:58:30.141 | INFO     | gui.main_window:on_closing:226 - Application closing

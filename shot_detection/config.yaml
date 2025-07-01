@@ -1,181 +1,243 @@
-# 智能镜头检测与分段系统配置文件
-
-# 检测算法配置
+advanced:
+  auto_update_check: true
+  crash_reporting: true
+  debug_mode: false
+  experimental_features: false
+  profiling_enabled: false
+  telemetry_enabled: false
+app:
+  author: Shot Detection Team
+  cache_size_mb: 1000
+  description: Advanced video shot boundary detection tool
+  enable_cache: true
+  log_level: INFO
+  name: Shot Detection
+  version: 2.0.0
 detection:
-  # 帧差分析配置
-  frame_diff_threshold: 0.3
-  frame_diff_min_scene_len: 15
-  
-  # 直方图检测配置
-  histogram_threshold: 0.4
-  histogram_bins: 256
-  
-  # 光流分析配置
-  optical_flow_threshold: 0.5
-  optical_flow_max_features: 1000
-  
-  # 深度学习检测配置
-  dl_model_path: "models/shot_detection_model.pth"
-  dl_confidence_threshold: 0.8
+  common:
+    cache_frames: true
+    cache_size: 100
+    enable_gpu: false
+    max_frames: null
+    num_threads: 4
+    sample_rate: 1
+  default_detector: multi_detector
   dl_batch_size: 32
-  
-  # 融合算法配置
+  dl_confidence_threshold: 0.8
+  dl_model_path: models/shot_detection_model.pth
+  frame_diff_min_scene_len: 15
+  frame_diff_threshold: 0.3
+  frame_difference:
+    adaptive_threshold: true
+    edge_threshold: 50
+    min_shot_length: 1.0
+    threshold: 0.3
+    use_edge_detection: false
+  fusion_threshold: 0.6
   fusion_weights:
+    deep_learning: 0.1
     frame_diff: 0.4
     histogram: 0.4
     optical_flow: 0.1
-    deep_learning: 0.1
-  fusion_threshold: 0.6
-
-# 视频处理配置
-processing:
-  # 支持的输入格式
-  input_formats:
-    - ".mp4"
-    - ".avi"
-    - ".mov"
-    - ".mkv"
-    - ".wmv"
-    - ".flv"
-    - ".webm"
-    - ".m4v"
-  
-  # 输出格式
-  output_format: "mp4"
-  
-  # 处理参数
-  target_fps: null  # null表示保持原始帧率
-  target_resolution: null  # null表示保持原始分辨率
-  quality_preset: "medium"  # low, medium, high, lossless
-  
-  # 性能配置
-  max_workers: 8
-  chunk_size: 1000
-  memory_limit_gb: 4.0
-  use_gpu: true
-  gpu_device: "cuda:0"
-  
-  # 缓存配置
-  enable_cache: true
-  cache_dir: ".cache"
-  cache_max_size_gb: 10.0
-
-# 输出配置
-output:
-  # 分段输出配置
-  segment_naming_pattern: "{basename}_segment_{index:03d}.{ext}"
-  include_metadata: true
-  preserve_audio: true
-  
-  # 项目文件生成
-  generate_premiere_xml: true
-  generate_final_cut_xml: true
-  generate_edl: true
-  generate_aaf: false
-  
-  # 报告生成
-  generate_html_report: true
-  generate_json_report: true
-  generate_csv_report: true
-  
-  # 时间码格式
-  timecode_format: "SMPTE"  # SMPTE, frames, seconds
-  timecode_fps: 25
-
-# 质量控制配置
-quality:
-  # 检测质量指标
-  min_accuracy: 0.95
-  max_false_positive_rate: 0.05
-  max_false_negative_rate: 0.03
-  
-  # 处理质量指标
-  max_processing_time_ratio: 0.1
-  min_segment_duration: 1.0
-  max_segment_duration: 300.0
-  
-  # 输出质量指标
-  min_metadata_accuracy: 0.98
-  required_format_compatibility: 1.0
-
-# Gemini AI 视频分析配置
+  histogram:
+    adaptive_threshold: true
+    bins: 256
+    color_space: RGB
+    method: correlation
+    threshold: 0.5
+    window_size: 5
+  histogram_bins: 256
+  histogram_threshold: 0.4
+  multi_detector:
+    clustering_threshold: 1.0
+    enabled_detectors:
+    - frame_difference
+    - histogram
+    fusion_weights:
+      frame_difference: 0.6
+      histogram: 0.4
+    min_confidence: 0.3
+  optical_flow_max_features: 1000
+  optical_flow_threshold: 0.5
 gemini:
-  # Cloudflare Gateway 配置
-  cloudflare_project_id: "67720b647ff2b55cf37ba3ef9e677083"
-  cloudflare_gateway_id: "bowong-dev"
-
-  # Google 项目配置
-  google_project_id: "gen-lang-client-0413414134"
-
-  # 模型配置
-  model_name: "gemini-2.5-flash"
-
-  # API 配置
-  base_url: "https://bowongai-dev--bowong-ai-video-gemini-fastapi-webapp.modal.run"
-  bearer_token: "bowong7777"
-  timeout_seconds: 120
-  max_retries: 3
-  retry_delay_seconds: 5
-
-  # 区域配置（支持多区域负载均衡）
-  regions:
-    - "us-central1"
-    - "us-east1"
-    - "europe-west1"
-
-  # 缓存配置
-  enable_cache: true
-  cache_dir: ".cache/gemini_analysis"
+  base_url: https://bowongai-dev--bowong-ai-video-gemini-fastapi-webapp.modal.run
+  bearer_token: bowong7777
+  cache_dir: .cache/gemini_analysis
   cache_expiry_days: 7
-
-  # 文件上传配置
+  cloudflare_gateway_id: bowong-dev
+  cloudflare_project_id: 67720b647ff2b55cf37ba3ef9e677083
+  enable_cache: true
+  google_project_id: gen-lang-client-0413414134
   max_file_size_mb: 100
+  max_retries: 3
+  model_name: gemini-2.5-flash
+  regions:
+  - us-central1
+  - us-east1
+  - europe-west1
+  retry_delay_seconds: 5
   supported_formats:
-    - ".mp4"
-    - ".avi"
-    - ".mov"
-    - ".mkv"
-    - ".wmv"
-    - ".webm"
-
-# 剪映项目配置
+  - .mp4
+  - .avi
+  - .mov
+  - .mkv
+  - .wmv
+  - .webm
+  timeout_seconds: 120
+gui:
+  font_size: 10
+  interface:
+    auto_save_settings: true
+    max_recent_files: 10
+    remember_last_directory: true
+    show_progress: true
+    show_statusbar: true
+    show_toolbar: true
+  performance:
+    enable_threading: true
+    max_worker_threads: 4
+    preview_update_rate: 30
+    update_interval: 100
+  remember_window_position: true
+  remember_window_size: true
+  theme: classic
+  window:
+    center_on_screen: true
+    height: 800
+    min_height: 600
+    min_width: 800
+    resizable: true
+    width: 1200
 jianying:
-  # 设备信息配置（用于生成draft_content.json）
+  allocation:
+    algorithm: smart
+    avoid_consecutive: true
+    balance_usage: true
+    ensure_uniqueness: true
+    max_reuse_count: 2
   device_info:
-    device_id: "0594836068dad896e25a104fc9dbabab"
-    hard_disk_id: "92ff8fc0225cc7379b7488c983cc022b"
-    mac_address: "32d6cbfd9256fd8884fac27c2658c25c,ec42e1bff9b87e6e58088ef68d13a818,f2ee8c3f35364c316ce08bf3c505b58b,003dc1a823f26cc7edc2f0bfac31c811"
-
-  # 平台信息配置
+    device_id: 0594836068dad896e25a104fc9dbabab
+    hard_disk_id: 92ff8fc0225cc7379b7488c983cc022b
+    mac_address: 32d6cbfd9256fd8884fac27c2658c25c,ec42e1bff9b87e6e58088ef68d13a818,f2ee8c3f35364c316ce08bf3c505b58b,003dc1a823f26cc7edc2f0bfac31c811
+  output:
+    auto_open_project: false
+    create_backup: true
+    use_original_paths: true
+    validate_output: true
   platform_info:
     app_id: 3704
-    app_source: "lv"
-    app_version: "5.9.0"
-    os: "windows"
-    os_version: "10.0.26100"
-
-  # 项目默认配置
+    app_source: lv
+    app_version: 5.9.0
+    os: windows
+    os_version: 10.0.26100
+  project:
+    auto_backup: true
+    backup_interval: 300
+    default_template: default
+    max_backups: 5
   project_defaults:
-    canvas_width: 1920
     canvas_height: 1080
+    canvas_width: 1920
     fps: 30.0
+    new_version: 110.0.0
     version: 360000
-    new_version: "110.0.0"
-
-# 系统配置
+  workflow:
+    auto_scan: true
+    max_video_duration: 3600.0
+    min_video_duration: 1.0
+    scan_recursive: true
+    supported_formats:
+    - .mp4
+    - .avi
+    - .mov
+    - .mkv
+logging:
+  console_enabled: true
+  file_enabled: true
+  file_path: logs/shot_detection.log
+  file_retention: 30 days
+  file_rotation: 10 MB
+  format: '{time:YYYY-MM-DD HH:mm:ss} | {level} | {name} | {message}'
+  level: INFO
+output:
+  generate_aaf: false
+  generate_csv_report: true
+  generate_edl: true
+  generate_final_cut_xml: true
+  generate_html_report: true
+  generate_json_report: true
+  generate_premiere_xml: true
+  include_metadata: true
+  preserve_audio: true
+  segment_naming_pattern: '{basename}_segment_{index:03d}.{ext}'
+  timecode_format: SMPTE
+  timecode_fps: 25
+performance:
+  cache_enabled: true
+  cache_size: 500MB
+  cpu_limit: 80
+  io_timeout: 30
+  max_parallel_jobs: 4
+  memory_limit: 2GB
+  parallel_processing: true
+processing:
+  cache_dir: .cache
+  cache_max_size_gb: 10.0
+  chunk_size: 1000
+  enable_cache: true
+  gpu_device: cuda:0
+  input_formats:
+  - .mp4
+  - .avi
+  - .mov
+  - .mkv
+  - .wmv
+  - .flv
+  - .webm
+  - .m4v
+  max_workers: 8
+  memory_limit_gb: 4.0
+  output:
+    audio_codec: aac
+    codec: h264
+    format: mp4
+    preserve_audio: true
+    quality: high
+  output_format: mp4
+  preview:
+    enabled: true
+    format: mp4
+    fps: 15
+    size:
+    - 320
+    - 240
+  quality_preset: medium
+  segmentation:
+    enable_smart_split: true
+    max_segment_duration: 300.0
+    min_segment_duration: 1.0
+    silence_threshold: -40
+    split_on_silence: false
+  target_fps: null
+  target_resolution: null
+  use_gpu: true
+quality:
+  max_false_negative_rate: 0.03
+  max_false_positive_rate: 0.05
+  max_processing_time_ratio: 0.1
+  max_segment_duration: 300.0
+  min_accuracy: 0.95
+  min_metadata_accuracy: 0.98
+  min_segment_duration: 1.0
+  required_format_compatibility: 1.0
 system:
-  # 日志配置
-  log_level: "INFO"
-  log_file: "shot_detection.log"
-  log_rotation: "10 MB"
-  log_retention: "30 days"
-
-  # 调试配置
   debug_mode: false
-  save_debug_frames: false
-  debug_output_dir: "debug"
-
-  # 监控配置
+  debug_output_dir: debug
   enable_monitoring: true
-  metrics_port: 8080
   health_check_interval: 30
+  log_file: shot_detection.log
+  log_level: INFO
+  log_retention: 30 days
+  log_rotation: 10 MB
+  metrics_port: 8080
+  save_debug_frames: false
