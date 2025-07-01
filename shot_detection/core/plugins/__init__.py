@@ -11,6 +11,9 @@ from .plugin_loader import PluginLoader
 from .plugin_registry import PluginRegistry
 from .plugin_interface import PluginInterface
 from .plugin_config import PluginConfig
+from .api import PluginAPI, APIRegistry, DetectionAPI, ProcessingAPI, ExportAPI
+from .discovery import PluginDiscovery, DiscoveryConfig
+from .sandbox import PluginSandbox, SandboxConfig
 
 __all__ = [
     "PluginManager",
@@ -21,4 +24,13 @@ __all__ = [
     "PluginRegistry",
     "PluginInterface",
     "PluginConfig",
+    "PluginAPI",
+    "APIRegistry",
+    "DetectionAPI",
+    "ProcessingAPI",
+    "ExportAPI",
+    "PluginDiscovery",
+    "DiscoveryConfig",
+    "PluginSandbox",
+    "SandboxConfig",
 ]

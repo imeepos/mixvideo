@@ -80,6 +80,15 @@ __all__ = [
     "PluginRegistry",
     "PluginInterface",
     "PluginConfig",
+    "PluginAPI",
+    "APIRegistry",
+    "DetectionAPI",
+    "ProcessingAPI",
+    "ExportAPI",
+    "PluginDiscovery",
+    "DiscoveryConfig",
+    "PluginSandbox",
+    "SandboxConfig",
 
     # Security
     "AuthenticationManager",
