@@ -7,8 +7,47 @@ import sys
 import os
 from pathlib import Path
 
-# 添加当前目录到Python路径
-sys.path.insert(0, str(Path(__file__).parent))
+# 强健的路径设置 - 确保能找到所有模块
+def setup_python_path():
+    """设置Python模块搜索路径"""
+    # 获取脚本所在目录
+    script_dir = Path(__file__).parent.resolve()
+
+    # 确保脚本目录在Python路径中
+    if str(script_dir) not in sys.path:
+        sys.path.insert(0, str(script_dir))
+
+    # 切换工作目录到脚本目录
+    os.chdir(str(script_dir))
+
+    print(f"[DEBUG] 脚本目录: {script_dir}")
+    print(f"[DEBUG] 工作目录: {Path.cwd()}")
+    print(f"[DEBUG] Python路径第一项: {sys.path[0]}")
+
+    # 验证关键文件是否存在
+    critical_files = [
+        "prompts_manager.py",
+        "prompts_constants.py",
+        "prompts/video-analysis.prompt"
+    ]
+
+    missing_files = []
+    for file_path in critical_files:
+        if not (script_dir / file_path).exists():
+            missing_files.append(file_path)
+
+    if missing_files:
+        print(f"[ERROR] 缺少关键文件: {missing_files}")
+        print(f"[ERROR] 请确保从正确的目录运行，或运行修复脚本")
+        return False
+
+    print(f"[DEBUG] 所有关键文件都存在")
+    return True
+
+# 设置路径
+if not setup_python_path():
+    print("路径设置失败，退出...")
+    sys.exit(1)
 
 def check_python_dependencies():
     """检查Python依赖项"""

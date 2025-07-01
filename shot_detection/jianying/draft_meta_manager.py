@@ -31,11 +31,12 @@ class MaterialInfo:
 class DraftMetaManager:
     """剪映项目元数据管理器"""
     
-    # 素材类型映射
+    # 素材类型映射（对应draft_materials数组的索引）
+    # 注意：在剪映中，视频和图片都放在type=0的组中
     MATERIAL_TYPES = {
         "video": 0,
-        "audio": 1, 
-        "image": 2,
+        "audio": 1,
+        "image": 0,  # 图片和视频都在同一个组中
         "text": 3,
         "other": 6
     }
@@ -43,14 +44,16 @@ class DraftMetaManager:
     def __init__(self, project_path: Union[str, Path]):
         """
         初始化元数据管理器
-        
+
         Args:
             project_path: 剪映项目目录路径
         """
         self.project_path = Path(project_path)
         self.meta_file_path = self.project_path / "draft_meta_info.json"
+        self.virtual_store_file_path = self.project_path / "draft_virtual_store.json"
         self.project_name = self.project_path.name
         self._meta_data = None
+        self._virtual_store_data = None
         
     def load_meta_data(self) -> Dict[str, Any]:
         """加载元数据文件"""
@@ -58,12 +61,16 @@ class DraftMetaManager:
             try:
                 with open(self.meta_file_path, 'r', encoding='utf-8') as f:
                     self._meta_data = json.load(f)
-                return self._meta_data
             except Exception as e:
                 print(f"加载元数据文件失败: {e}")
-                return self._create_default_meta_data()
+                self._create_default_meta_data()
         else:
-            return self._create_default_meta_data()
+            self._create_default_meta_data()
+
+        # 同时加载虚拟存储数据
+        self.load_virtual_store_data()
+
+        return self._meta_data
     
     def _create_default_meta_data(self) -> Dict[str, Any]:
         """创建默认的元数据结构"""
@@ -118,7 +125,52 @@ class DraftMetaManager:
             "tm_duration": 0
         }
         return self._meta_data
-    
+
+    def _create_default_virtual_store_data(self) -> Dict[str, Any]:
+        """创建默认的虚拟存储数据结构"""
+        self._virtual_store_data = {
+            "draft_materials": [],
+            "draft_virtual_store": [
+                {
+                    "type": 0,
+                    "value": [
+                        {
+                            "creation_time": 0,
+                            "display_name": "",
+                            "filter_type": 0,
+                            "id": "",
+                            "import_time": 0,
+                            "import_time_us": 0,
+                            "sort_sub_type": 0,
+                            "sort_type": 0
+                        }
+                    ]
+                },
+                {
+                    "type": 1,
+                    "value": []
+                },
+                {
+                    "type": 2,
+                    "value": []
+                }
+            ]
+        }
+        return self._virtual_store_data
+
+    def load_virtual_store_data(self) -> Dict[str, Any]:
+        """加载虚拟存储数据文件"""
+        if self.virtual_store_file_path.exists():
+            try:
+                with open(self.virtual_store_file_path, 'r', encoding='utf-8') as f:
+                    self._virtual_store_data = json.load(f)
+                return self._virtual_store_data
+            except Exception as e:
+                print(f"加载虚拟存储数据文件失败: {e}")
+                return self._create_default_virtual_store_data()
+        else:
+            return self._create_default_virtual_store_data()
+
     def add_material(self, material: MaterialInfo) -> str:
         """
         添加素材到项目
@@ -181,13 +233,14 @@ class DraftMetaManager:
             image_info = self._get_image_info(file_path)
             if image_info:
                 material_data.update(image_info)
-                # 图片设置默认时长（5秒）
-                if 'duration' not in image_info:
-                    material_data['duration'] = 5000000
-                    material_data['roughcut_time_range'] = {
-                        "duration": 5000000,
-                        "start": 0
-                    }
+
+            # 图片的特殊设置
+            material_data['metetype'] = "photo"  # 图片类型应该是 "photo"
+            material_data['duration'] = 5000000  # 图片默认时长5秒
+            material_data['roughcut_time_range'] = {
+                "duration": -1,  # 图片的时间范围设置为-1
+                "start": -1
+            }
         
         # 添加到对应的素材类型组
         material_type_index = self.MATERIAL_TYPES.get(material.material_type, 0)
@@ -198,9 +251,44 @@ class DraftMetaManager:
         
         # 更新修改时间
         self._meta_data["tm_draft_modified"] = current_time_ms
-        
+
+        # 更新虚拟存储数据
+        self._update_virtual_store_for_material(material_id)
+
         return material_id
-    
+
+    def _update_virtual_store_for_material(self, material_id: str):
+        """更新虚拟存储数据，添加素材ID"""
+        # 确保虚拟存储数据已加载
+        if self._virtual_store_data is None:
+            self.load_virtual_store_data()
+
+        # 在 type=1 的组中添加素材ID映射
+        for store_group in self._virtual_store_data["draft_virtual_store"]:
+            if store_group["type"] == 1:
+                # 检查是否已存在
+                existing_ids = [item.get("child_id") for item in store_group["value"]]
+                if material_id not in existing_ids:
+                    store_group["value"].append({
+                        "child_id": material_id,
+                        "parent_id": ""
+                    })
+                break
+
+    def _remove_from_virtual_store(self, material_id: str):
+        """从虚拟存储数据中移除素材ID"""
+        if self._virtual_store_data is None:
+            return
+
+        # 从 type=1 的组中移除素材ID映射
+        for store_group in self._virtual_store_data["draft_virtual_store"]:
+            if store_group["type"] == 1:
+                store_group["value"] = [
+                    item for item in store_group["value"]
+                    if item.get("child_id") != material_id
+                ]
+                break
+
     def _get_video_info(self, video_path: Path) -> Optional[Dict[str, Any]]:
         """使用ffprobe获取详细的视频信息"""
         try:
@@ -437,8 +525,12 @@ class DraftMetaManager:
                 if material.get("id") == material_id:
                     materials.pop(i)
                     self._meta_data["tm_draft_modified"] = int(time.time() * 1000000)
+
+                    # 同时从虚拟存储数据中移除
+                    self._remove_from_virtual_store(material_id)
+
                     return True
-        
+
         return False
     
     def get_materials_by_type(self, material_type: str) -> List[Dict[str, Any]]:
@@ -489,17 +581,22 @@ class DraftMetaManager:
         """保存元数据到文件"""
         if self._meta_data is None:
             return False
-        
+
         try:
             # 确保目录存在
             self.meta_file_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            # 保存文件
+
+            # 保存主元数据文件
             with open(self.meta_file_path, 'w', encoding='utf-8') as f:
                 json.dump(self._meta_data, f, ensure_ascii=False, indent=4)
-            
+
+            # 保存虚拟存储数据文件
+            if self._virtual_store_data is not None:
+                with open(self.virtual_store_file_path, 'w', encoding='utf-8') as f:
+                    json.dump(self._virtual_store_data, f, ensure_ascii=False, indent=4)
+
             return True
-            
+
         except Exception as e:
             print(f"保存元数据文件失败: {e}")
             return False
@@ -522,6 +619,32 @@ class DraftMetaManager:
         """设置项目总时长"""
         if self._meta_data is None:
             self.load_meta_data()
-        
+
         self._meta_data["tm_duration"] = duration_ms
         self._meta_data["tm_draft_modified"] = int(time.time() * 1000000)
+
+    def create_new_project(self):
+        """创建新的剪映项目元数据"""
+        current_time = int(time.time() * 1000000)
+        project_id = str(uuid.uuid4()).upper()
+
+        # 创建基础元数据结构
+        self._meta_data = {
+            "draft_id": project_id,
+            "draft_name": self.project_path.name,
+            "draft_fold_path": str(self.project_path),
+            "draft_root": str(self.project_path),
+            "tm_draft_create": current_time,
+            "tm_draft_modified": current_time,
+            "tm_duration": 0,
+            "draft_materials": [[], [], [], [], [], [], []],  # 7个素材组
+            "draft_removable_storage_device": ""
+        }
+
+        # 创建虚拟存储数据
+        self._virtual_store_data = {
+            "store_data": {}
+        }
+
+        # 保存文件
+        return self.save_metadata()

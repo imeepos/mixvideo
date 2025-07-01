@@ -1,0 +1,30 @@
+# 最小化依赖 - 仅视频分析功能必需
+# 兼容Python 3.8+ (包括Python 3.12+)
+
+# 核心视频处理
+opencv-python>=4.5.0
+numpy>=1.20.0
+
+# 网络请求 (Gemini API)
+requests>=2.25.0
+
+# 日志记录
+loguru>=0.6.0
+
+# 图像处理
+Pillow>=8.0.0
+
+# 配置文件处理
+PyYAML>=5.4.0
+
+# GUI框架 (通常内置)
+# tkinter (built-in)
+
+# 可选依赖 (如果需要高级功能)
+# scipy>=1.6.0
+# matplotlib>=3.3.0
+# pandas>=1.3.0
+
+# 开发工具 (可选)
+# pytest>=6.0.0
+# black>=21.0.0

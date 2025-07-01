@@ -14,20 +14,20 @@ import datetime
 def create_complete_python_distribution():
     """创建完整的Python源码分发包"""
     print("🐍 创建完整的Python源码分发包...")
-    
+
     # 创建发布目录
     release_name = f"ShotDetectionGUI_Python_Complete_v1.0.3_{datetime.datetime.now().strftime('%Y%m%d')}"
     release_dir = Path(release_name)
-    
+
     if release_dir.exists():
         shutil.rmtree(release_dir)
-    
+
     release_dir.mkdir()
     print(f"📁 创建发布目录: {release_dir}")
-    
+
     # 复制所有Python文件
     print("📋 复制Python源码...")
-    
+
     # 主要Python文件
     python_files = [
         "run_gui.py",  # 修改：集成自动检查和安装
@@ -48,25 +48,36 @@ def create_complete_python_distribution():
         "install_ffmpeg.py",  # FFmpeg自动安装工具
         "check_ffmpeg.py",  # FFmpeg检查工具
         "auto_install_tools.py",  # 自动安装所有工具
-        "__init__.py"
+        "prompts_constants.py",
+        "prompts_manager.py",
+        "gemini_video_analyzer.py",
+        "python313_compatibility_fix.py",
+        "__init__.py",
     ]
-    
+
     for file in python_files:
         if Path(file).exists():
             shutil.copy2(file, release_dir / file)
             print(f"✅ {file}")
         else:
             print(f"⚠️ 文件不存在: {file}")
-    
+
     # 复制目录
-    directories = ["utils", "detectors", "processors", "exporters"]
+    directories = [
+        "utils",
+        "detectors",
+        "processors",
+        "exporters",
+        "jianying",
+        "prompts",
+    ]
     for dir_name in directories:
         if Path(dir_name).exists():
             shutil.copytree(dir_name, release_dir / dir_name)
             print(f"✅ {dir_name}/")
         else:
             print(f"⚠️ 目录不存在: {dir_name}")
-    
+
     # 复制配置文件
     config_files = ["config.yaml", "font_config.ini", "classification_config.yaml"]
     for file in config_files:
@@ -75,60 +86,95 @@ def create_complete_python_distribution():
             print(f"✅ {file}")
         else:
             print(f"⚠️ 配置文件不存在: {file}")
-    
+
     # 复制其他文件
     other_files = ["README.md", "icon.ico", "test_video.mp4"]
     for file in other_files:
         if Path(file).exists():
             size_mb = Path(file).stat().st_size / (1024 * 1024)
-            if file.endswith('.mp4') and size_mb > 50:
+            if file.endswith(".mp4") and size_mb > 50:
                 print(f"⚠️ {file} 太大 ({size_mb:.1f}MB)，跳过")
                 continue
             shutil.copy2(file, release_dir / file)
             print(f"✅ {file}")
-    
+
     # 创建完整的requirements.txt
     print("📋 创建完整的requirements.txt...")
     requirements = release_dir / "requirements.txt"
-    with open(requirements, 'w', encoding='utf-8') as f:
-        f.write("""# Smart Shot Detection System - Complete Python Dependencies
-# Core video processing
-opencv-python>=4.5.0
-numpy>=1.20.0
+    with open(requirements, "w", encoding="utf-8") as f:
+        f.write(
+            """# Smart Shot Detection System - Complete Python Dependencies
+# 核心视频处理库
+opencv-python>=4.8.0
+numpy>=1.24.0
+scipy>=1.10.0
 
-# Logging and utilities
-loguru>=0.6.0
+# 深度学习框架
+torch>=2.0.0
+torchvision>=0.15.0
+tensorflow>=2.12.0
 
-# GUI and image processing
-Pillow>=8.0.0
+# 视频处理专业库
+ffmpeg-python>=0.2.0
+moviepy>=1.0.3
+imageio>=2.28.0
+imageio-ffmpeg>=0.4.8
 
-# Path handling (for older Python versions)
-pathlib2>=2.3.0; python_version<"3.4"
+# 图像处理和计算机视觉
+scikit-image>=0.20.0
+Pillow>=9.5.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
 
-# Data classes (for older Python versions)
-dataclasses>=0.6; python_version<"3.7"
+# 数据处理和分析
+pandas>=2.0.0
+scikit-learn>=1.2.0
+joblib>=1.2.0
 
-# For building executable (optional)
-pyinstaller>=5.0.0
+# 音频处理
+librosa>=0.10.0
+soundfile>=0.12.0
 
-# Additional utilities
-typing-extensions>=3.7.4; python_version<"3.8"
+# 进度条和日志
+tqdm>=4.65.0
+loguru>=0.7.0
 
-# GUI framework (usually included with Python)
-# tkinter (built-in on most Python installations)
+# 网络请求和API调用
+requests>=2.31.0
+urllib3>=2.0.0
 
-# Note: If you encounter import errors, try installing these additional packages:
-# matplotlib>=3.3.0  # For advanced plotting (optional)
-# scipy>=1.6.0       # For advanced signal processing (optional)
-""")
+# 配置文件处理
+pyyaml>=6.0
+configparser>=5.3.0
+
+# 并行处理
+multiprocessing-logging>=0.3.4
+concurrent-futures>=3.1.1
+
+# 可视化
+plotly>=5.14.0
+dash>=2.10.0
+
+# 测试框架
+pytest>=7.3.0
+pytest-cov>=4.0.0
+
+# 代码质量
+black>=23.3.0
+flake8>=6.0.0
+mypy>=1.3.0
+
+"""
+        )
     print("✅ requirements.txt")
-    
+
     # 创建增强的Windows启动脚本
     print("📋 创建增强的Windows启动脚本...")
-    
+
     run_python_bat = release_dir / "run_python.bat"
-    with open(run_python_bat, 'w', encoding='utf-8') as f:
-        f.write("""@echo off
+    with open(run_python_bat, "w", encoding="utf-8") as f:
+        f.write(
+            """@echo off
 chcp 65001 >nul
 echo Smart Shot Detection System - Python Version (Complete)
 echo ========================================================
@@ -212,13 +258,15 @@ if errorlevel 1 (
     echo.
     pause
 )
-""")
+"""
+        )
     print("✅ run_python.bat")
-    
+
     # 创建Linux启动脚本
     run_linux_sh = release_dir / "run_linux.sh"
-    with open(run_linux_sh, 'w', encoding='utf-8') as f:
-        f.write("""#!/bin/bash
+    with open(run_linux_sh, "w", encoding="utf-8") as f:
+        f.write(
+            """#!/bin/bash
 echo "Smart Shot Detection System - Python Version (Complete)"
 echo "========================================================"
 
@@ -279,14 +327,16 @@ echo ""
 
 echo "Starting Smart Shot Detection System..."
 python3 run_gui.py
-""")
+"""
+        )
     os.chmod(run_linux_sh, 0o755)
     print("✅ run_linux.sh")
-    
+
     # 创建依赖检查脚本
     check_deps_py = release_dir / "check_dependencies.py"
-    with open(check_deps_py, 'w', encoding='utf-8') as f:
-        f.write("""#!/usr/bin/env python3
+    with open(check_deps_py, "w", encoding="utf-8") as f:
+        f.write(
+            """#!/usr/bin/env python3
 \"\"\"
 依赖检查脚本
 验证所有必要的模块是否可用
@@ -318,6 +368,7 @@ def main():
         ("numpy", "numpy (numerical computing)"),
         ("loguru", "loguru (logging)"),
         ("PIL", "Pillow (image processing)"),
+        ("yaml", "PyYAML (configuration files)"),
     ]
     
     # 可选的依赖
@@ -363,14 +414,16 @@ if __name__ == "__main__":
     success = main()
     input("\\n按回车键退出...")
     sys.exit(0 if success else 1)
-""")
+"""
+        )
     print("✅ check_dependencies.py")
-    
+
     # 创建详细的安装指南
     print("📖 创建详细的安装指南...")
     guide = release_dir / "INSTALLATION_GUIDE.txt"
-    with open(guide, 'w', encoding='utf-8') as f:
-        f.write("""Smart Shot Detection System - Complete Installation Guide
+    with open(guide, "w", encoding="utf-8") as f:
+        f.write(
+            """Smart Shot Detection System - Complete Installation Guide
 
 === QUICK START ===
 
@@ -458,37 +511,38 @@ Solution: The application will auto-detect fonts, but you can:
 For additional help, check the README.md file or run the dependency checker.
 
 © 2024 Smart Shot Detection System - Complete Edition
-""")
+"""
+        )
     print("✅ INSTALLATION_GUIDE.txt")
-    
+
     # 计算发布包大小
     total_size = 0
     for root, dirs, files in os.walk(release_dir):
         for file in files:
             total_size += os.path.getsize(os.path.join(root, file))
-    
+
     size_mb = total_size / (1024 * 1024)
     print(f"📊 发布包大小: {size_mb:.1f} MB")
-    
+
     # 创建压缩包
     print("🗜️ 创建压缩包...")
     zip_name = f"{release_name}.zip"
-    
-    with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
+
+    with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
         for root, dirs, files in os.walk(release_dir):
             for file in files:
                 file_path = os.path.join(root, file)
                 arc_name = os.path.relpath(file_path, release_dir.parent)
                 zipf.write(file_path, arc_name)
-    
+
     zip_size = os.path.getsize(zip_name) / (1024 * 1024)
     print(f"✅ 压缩包创建完成: {zip_name} ({zip_size:.1f} MB)")
-    
+
     print(f"\n🎉 完整Python源码分发包创建完成！")
     print(f"📁 目录版本: {release_dir}/")
     print(f"📦 压缩包: {zip_name}")
     print(f"📊 总大小: {size_mb:.1f} MB (压缩后: {zip_size:.1f} MB)")
-    
+
     print(f"\n📋 包含内容:")
     print(f"✅ 完整Python源码（包含gui_logger.py）")
     print(f"✅ 智能视频分段归类功能（新增）")
@@ -499,7 +553,7 @@ For additional help, check the README.md file or run the dependency checker.
     print(f"✅ 完整的安装指南")
     print(f"✅ 自动错误诊断和修复")
     print(f"✅ 归类功能测试脚本（新增）")
-    
+
     return release_dir, zip_name
 
 

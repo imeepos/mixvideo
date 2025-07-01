@@ -124,13 +124,40 @@ def create_segment_with_ffmpeg(video_path: str, segment: VideoSegment,
         # 执行命令
         logger.debug(f"执行FFmpeg命令: {' '.join(cmd)}")
         
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=300  # 5分钟超时
-        )
-        
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                encoding='utf-8',  # 强制使用UTF-8编码
+                errors='ignore',   # 忽略编码错误
+                timeout=300  # 5分钟超时
+            )
+        except UnicodeDecodeError:
+            # 如果UTF-8失败，尝试不使用text模式
+            logger.warning("UTF-8解码失败，尝试二进制模式")
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                timeout=300
+            )
+            # 手动解码，忽略错误
+            try:
+                stderr_text = result.stderr.decode('utf-8', errors='ignore')
+                stdout_text = result.stdout.decode('utf-8', errors='ignore')
+            except:
+                stderr_text = str(result.stderr)
+                stdout_text = str(result.stdout)
+
+            # 创建一个模拟的result对象
+            class MockResult:
+                def __init__(self, returncode, stderr, stdout):
+                    self.returncode = returncode
+                    self.stderr = stderr
+                    self.stdout = stdout
+
+            result = MockResult(result.returncode, stderr_text, stdout_text)
+
         if result.returncode != 0:
             logger.error(f"FFmpeg错误: {result.stderr}")
             return False

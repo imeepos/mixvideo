@@ -138,6 +138,30 @@ gemini:
     - ".wmv"
     - ".webm"
 
+# 剪映项目配置
+jianying:
+  # 设备信息配置（用于生成draft_content.json）
+  device_info:
+    device_id: "0594836068dad896e25a104fc9dbabab"
+    hard_disk_id: "92ff8fc0225cc7379b7488c983cc022b"
+    mac_address: "32d6cbfd9256fd8884fac27c2658c25c,ec42e1bff9b87e6e58088ef68d13a818,f2ee8c3f35364c316ce08bf3c505b58b,003dc1a823f26cc7edc2f0bfac31c811"
+
+  # 平台信息配置
+  platform_info:
+    app_id: 3704
+    app_source: "lv"
+    app_version: "5.9.0"
+    os: "windows"
+    os_version: "10.0.26100"
+
+  # 项目默认配置
+  project_defaults:
+    canvas_width: 1920
+    canvas_height: 1080
+    fps: 30.0
+    version: 360000
+    new_version: "110.0.0"
+
 # 系统配置
 system:
   # 日志配置

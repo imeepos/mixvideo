@@ -23,6 +23,28 @@ from gui_logger import setup_gui_logging, ProgressMonitor, ProcessingStatus, Res
 from font_config import FontManager
 from video_processing_with_callbacks import process_video_with_gui_callbacks
 
+# 剪映草稿管理相关导入
+def import_jianying_modules():
+    """导入剪映模块，处理路径问题"""
+    import sys
+    from pathlib import Path
+
+    # 确保当前脚本目录在Python路径中
+    current_dir = Path(__file__).parent
+    if str(current_dir) not in sys.path:
+        sys.path.insert(0, str(current_dir))
+
+    try:
+        from jianying.draft_meta_manager import DraftMetaManager, MaterialInfo
+        from jianying.draft_content_manager import DraftContentManager
+        return DraftMetaManager, MaterialInfo, DraftContentManager, None
+    except ImportError as e:
+        error_msg = f"无法导入 jianying 模块: {e}"
+        return None, None, None, error_msg
+
+# 执行导入
+DraftMetaManager, MaterialInfo, DraftContentManager, import_error = import_jianying_modules()
+
 
 class ShotDetectionGUI:
     """智能镜头检测与分段系统 - 简化版GUI"""
@@ -30,8 +52,8 @@ class ShotDetectionGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("🎬 智能镜头检测与分段系统")
-        self.root.geometry("700x500")
-        self.root.minsize(600, 400)
+        self.root.geometry("900x700")
+        self.root.minsize(800, 600)
 
         # 设置图标和样式
         self.setup_styles()
@@ -57,6 +79,11 @@ class ShotDetectionGUI:
         # 视频分析变量
         self.analysis_video_path = tk.StringVar()
         self.analysis_output_dir = tk.StringVar()
+
+        # 剪映草稿管理变量
+        self.draft_project_path = tk.StringVar()
+        self.current_draft_manager = None
+        self.current_project_path = None
 
         self.processing = False
         self.current_task = None
@@ -134,38 +161,92 @@ class ShotDetectionGUI:
         self.root.geometry(f'{width}x{height}+{x}+{y}')
 
     def create_widgets(self):
-        """创建带Tab的界面组件"""
-        # 主容器
-        main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        """创建带外层滚动条的界面组件"""
+        # 创建主容器和滚动条
+        main_container = ttk.Frame(self.root)
+        main_container.pack(fill=tk.BOTH, expand=True)
+
+        # 创建Canvas和滚动条
+        self.main_canvas = tk.Canvas(main_container, highlightthickness=0)
+        self.main_scrollbar = ttk.Scrollbar(main_container, orient="vertical", command=self.main_canvas.yview)
+        self.scrollable_main_frame = ttk.Frame(self.main_canvas, padding="10")
+
+        # 配置滚动
+        self.scrollable_main_frame.bind(
+            "<Configure>",
+            lambda e: self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
+        )
+
+        self.main_canvas.create_window((0, 0), window=self.scrollable_main_frame, anchor="nw")
+        self.main_canvas.configure(yscrollcommand=self.main_scrollbar.set)
+
+        # 布局Canvas和滚动条
+        self.main_canvas.pack(side="left", fill="both", expand=True)
+        self.main_scrollbar.pack(side="right", fill="y")
+
+        # 绑定鼠标滚轮事件到整个界面
+        self.bind_mousewheel_to_main_canvas()
 
         # 标题
-        title_label = ttk.Label(main_frame, text="🎬 智能镜头检测与分段系统", style='Title.TLabel')
+        title_label = ttk.Label(self.scrollable_main_frame, text="🎬 智能镜头检测与分段系统", style='Title.TLabel')
         title_label.pack(pady=(0, 15))
 
         # 创建Tab控件
-        self.notebook = ttk.Notebook(main_frame)
+        self.notebook = ttk.Notebook(self.scrollable_main_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
-        # 创建可滚动的Tab页面
-        self.create_scrollable_tabs()
+        # 创建非滚动的Tab页面（因为外层已经有滚动条了）
+        self.create_tabs()
 
         # 创建共享的进度和日志区域
-        self.create_shared_progress_section(main_frame)
+        self.create_shared_progress_section(self.scrollable_main_frame)
 
-    def create_scrollable_tabs(self):
-        """创建可滚动的Tab页面"""
+    def bind_mousewheel_to_main_canvas(self):
+        """绑定鼠标滚轮事件到主Canvas"""
+        def _on_mousewheel(event):
+            self.main_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+        def _bind_to_mousewheel(event):
+            self.main_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        def _unbind_from_mousewheel(event):
+            self.main_canvas.unbind_all("<MouseWheel>")
+
+        self.main_canvas.bind('<Enter>', _bind_to_mousewheel)
+        self.main_canvas.bind('<Leave>', _unbind_from_mousewheel)
+
+        # 也绑定到root窗口，确保在任何地方都能滚动
+        self.root.bind_all("<MouseWheel>", _on_mousewheel)
+
+    def create_tabs(self):
+        """创建Tab页面（无内部滚动条，使用外层滚动条）"""
         # 单个文件处理Tab
-        self.single_canvas, self.single_frame = self.create_scrollable_tab("📄 单个文件处理")
+        self.single_frame = self.create_simple_tab("📄 视频分镜")
         self.create_single_file_interface()
 
         # 批量处理Tab
-        self.batch_canvas, self.batch_frame = self.create_scrollable_tab("📁 批量处理")
+        self.batch_frame = self.create_simple_tab("📁 批量分镜")
         self.create_batch_interface()
 
         # 视频分析Tab
-        self.analysis_canvas, self.analysis_frame = self.create_scrollable_tab("🎥 视频分析")
+        self.analysis_frame = self.create_simple_tab("🎥 视频分类")
         self.create_analysis_interface()
+
+        # 剪映草稿管理Tab
+        self.draft_frame = self.create_simple_tab("🎬 剪映草稿")
+        self.create_draft_manager_interface()
+
+        # 视频混剪Tab (抖音视频制作)
+        self.video_mix_frame = self.create_simple_tab("🎬 视频混剪")
+        self.create_video_mix_interface()
+
+    def create_simple_tab(self, tab_name):
+        """创建简单的Tab页面（无内部滚动条）"""
+        # 创建Tab的主容器
+        tab_container = ttk.Frame(self.notebook, padding="15")
+        self.notebook.add(tab_container, text=tab_name)
+
+        return tab_container
 
     def create_scrollable_tab(self, tab_name):
         """创建单个可滚动的Tab页面"""
@@ -1301,14 +1382,81 @@ class ShotDetectionGUI:
             self.update_progress(10, "初始化Gemini客户端...")
 
             # 导入并使用提示词
-            from prompts_manager import PromptsManager
-            prompts_manager = PromptsManager()
-            analysis_prompt = prompts_manager.get_video_analysis_prompt()
+            analysis_prompt = None
 
+            # 尝试多种方式获取提示词
+            try:
+                # 方法1: 直接导入
+                from prompts_manager import PromptsManager
+                prompts_manager = PromptsManager()
+                analysis_prompt = prompts_manager.get_video_analysis_prompt()
+
+                # 检查提示词是否有效
+                if analysis_prompt and len(analysis_prompt.strip()) > 50:
+                    self.log_message("使用prompts_manager获取提示词", "INFO")
+                else:
+                    self.log_message("prompts_manager返回的提示词无效或为空", "WARNING")
+                    analysis_prompt = None  # 强制进入备用方案
+
+            except ImportError as e:
+                self.log_message(f"prompts_manager导入失败: {e}", "WARNING")
+
+                try:
+                    # 方法2: 添加路径后导入
+                    current_dir = str(Path(__file__).parent)
+                    if current_dir not in sys.path:
+                        sys.path.insert(0, current_dir)
+
+                    # 清理模块缓存
+                    if 'prompts_manager' in sys.modules:
+                        del sys.modules['prompts_manager']
+
+                    from prompts_manager import PromptsManager
+                    prompts_manager = PromptsManager()
+                    analysis_prompt = prompts_manager.get_video_analysis_prompt()
+
+                    # 检查提示词是否有效
+                    if analysis_prompt and len(analysis_prompt.strip()) > 50:
+                        self.log_message("路径调整后成功获取提示词", "INFO")
+                    else:
+                        self.log_message("路径调整后prompts_manager仍返回无效提示词", "WARNING")
+                        analysis_prompt = None  # 强制进入下一个备用方案
+
+                except Exception as e2:
+                    self.log_message(f"路径调整后仍失败: {e2}", "WARNING")
+
+                    try:
+                        # 方法3: 使用备用提示词
+                        from prompts_constants import VIDEO_ANALYSIS_PROMPT
+                        analysis_prompt = VIDEO_ANALYSIS_PROMPT
+                        self.log_message("使用备用提示词", "INFO")
+
+                    except Exception as e3:
+                        self.log_message(f"备用提示词也失败: {e3}", "ERROR")
+
+                        # 方法4: 直接读取文件
+                        try:
+                            prompts_file = Path(__file__).parent / "prompts" / "video-analysis.prompt"
+                            if prompts_file.exists():
+                                with open(prompts_file, 'r', encoding='utf-8') as f:
+                                    analysis_prompt = f.read().strip()
+                                self.log_message("直接读取提示词文件成功", "INFO")
+                            else:
+                                self.log_message("提示词文件不存在", "ERROR")
+                        except Exception as e4:
+                            self.log_message(f"直接读取文件失败: {e4}", "ERROR")
+
+            # 检查是否成功获取提示词
             if not analysis_prompt:
-                self.log_message("无法加载视频分析提示词", "ERROR")
+                self.log_message("所有方法都无法获取视频分析提示词", "ERROR")
+                self.log_message("请检查以下文件是否存在:", "ERROR")
+                self.log_message("1. prompts_manager.py", "ERROR")
+                self.log_message("2. prompts_constants.py", "ERROR")
+                self.log_message("3. prompts/video-analysis.prompt", "ERROR")
                 self._finish_video_analysis()
                 return
+
+            self.log_message(f"成功获取提示词，长度: {len(analysis_prompt)} 字符", "INFO")
 
             self.update_progress(20, "加载分析提示词...")
             self.log_message(f"使用提示词长度: {len(analysis_prompt)} 字符", "INFO")
@@ -1751,9 +1899,7 @@ class ShotDetectionGUI:
             if not category_info:
                 # 如果Gemini归类失败，使用备用逻辑
                 self.log_message("⚠️ Gemini归类失败，使用备用归类逻辑", "WARNING")
-                category_folder = self._determine_category_fallback(analysis_data)
-                confidence = 0.5
-                reason = "备用逻辑归类"
+                raise Exception("Gemini归类失败")
             else:
                 category_folder = category_info.get('category', 'standard')
                 confidence = category_info.get('confidence', 0.8)
@@ -1794,8 +1940,17 @@ class ShotDetectionGUI:
         """使用Gemini API和folder-matching提示词进行智能归类"""
         try:
             # 加载folder-matching提示词
-            from prompts_manager import PromptsManager
-            prompts_manager = PromptsManager()
+            try:
+                # 确保当前目录在Python路径中
+                current_dir = str(Path(__file__).parent)
+                if current_dir not in sys.path:
+                    sys.path.insert(0, current_dir)
+
+                from prompts_manager import PromptsManager
+                prompts_manager = PromptsManager()
+            except ImportError as e:
+                self.log_message(f"无法导入prompts_manager模块: {e}", "WARNING")
+                return None
 
             # 构建内容描述
             content_description = self._build_content_description(analysis_data)
@@ -2053,99 +2208,11 @@ class ShotDetectionGUI:
         except Exception as e:
             self.log_message(f"❌ Gemini归类分析失败: {e}", "ERROR")
             self.log_message("⚠️ 将使用备用归类逻辑", "WARNING")
+            raise e
 
-            # 备用逻辑：基于关键词的简单归类
-            return self._fallback_classification(prompt)
+   
 
-    def _fallback_classification(self, prompt):
-        """备用归类逻辑：基于关键词的简单归类"""
-        try:
-            content_lower = prompt.lower()
-
-            # 简单的关键词匹配逻辑
-            if "高光时刻数量: 4" in content_lower or "高光时刻数量: 3" in content_lower:
-                category = "premium_highlights"
-                confidence = 0.8
-                reason = "检测到多个高光时刻(≥3个)"
-            elif ("白底" in content_lower or "白色背景" in content_lower) and "模特" not in content_lower:
-                category = "product_display"
-                confidence = 0.75
-                reason = "检测到产品展示特征"
-            elif "模特" in content_lower and ("试穿" in content_lower or "转身" in content_lower):
-                category = "model_wearing"
-                confidence = 0.75
-                reason = "检测到模特试穿特征"
-            elif "高光时刻数量: 2" in content_lower or "高光时刻数量: 1" in content_lower:
-                category = "good_highlights"
-                confidence = 0.7
-                reason = "检测到少量高光时刻(1-2个)"
-            elif "活力" in content_lower or "活泼" in content_lower:
-                category = "active_style"
-                confidence = 0.65
-                reason = "检测到活泼风格特征"
-            elif "优雅" in content_lower or "专业" in content_lower:
-                category = "elegant_style"
-                confidence = 0.65
-                reason = "检测到优雅风格特征"
-            else:
-                category = "standard"
-                confidence = 0.5
-                reason = "使用默认分类"
-
-            return {
-                "category": category,
-                "confidence": confidence,
-                "reason": f"备用逻辑: {reason}",
-                "quality_level": "B级" if confidence > 0.7 else "C级",
-                "features": ["关键词匹配"],
-                "recommendations": "建议使用AI分析获得更准确的归类"
-            }
-
-        except Exception as e:
-            # 最后的备用方案
-            return {
-                "category": "standard",
-                "confidence": 0.5,
-                "reason": "备用归类失败，使用默认分类",
-                "quality_level": "C级",
-                "features": ["默认归类"],
-                "recommendations": "请检查系统配置"
-            }
-
-    def _determine_category_fallback(self, analysis_data):
-        """备用归类逻辑：根据分析数据确定归类文件夹"""
-        # 获取高光时刻数量
-        highlights = analysis_data.get('highlights', [])
-        highlight_count = len(highlights)
-
-        # 获取情感分析
-        emotions = analysis_data.get('emotions', {})
-        overall_mood = emotions.get('overall_mood', '').lower()
-
-        # 获取质量评估
-        quality = analysis_data.get('quality', {})
-        video_quality = quality.get('video_quality', 0)
-
-        # 获取技术信息
-        technical = analysis_data.get('technical', {})
-        resolution = technical.get('resolution', '').lower()
-
-        # 备用归类逻辑
-        if highlight_count >= 3 and video_quality >= 8:
-            return "premium_highlights"  # 优质高光
-        elif highlight_count >= 2:
-            return "good_highlights"     # 良好高光
-        elif 'elegant' in overall_mood or 'professional' in overall_mood or '优雅' in overall_mood or '专业' in overall_mood:
-            return "elegant_style"       # 优雅风格
-        elif 'active' in overall_mood or 'energetic' in overall_mood or '活泼' in overall_mood or '活力' in overall_mood:
-            return "active_style"        # 活泼风格
-        elif '1080p' in resolution or 'hd' in resolution:
-            return "hd_quality"          # 高清质量
-        elif video_quality >= 7:
-            return "good_quality"        # 良好质量
-        else:
-            return "standard"            # 标准分类
-
+    
     def _generate_classified_filename(self, original_file, analysis_data, category_info=None):
         """生成归类后的文件名"""
         # 获取原始文件名（不含扩展名）
@@ -2253,21 +2320,9 @@ class ShotDetectionGUI:
             highlight_count = len(highlights)
             video_quality = quality.get('video_quality', 0)
 
-            # 确定归类信息
-            category = self._determine_category(analysis_data)
-            category_names = {
-                "premium_highlights": "优质高光",
-                "good_highlights": "良好高光",
-                "elegant_style": "优雅风格",
-                "active_style": "活泼风格",
-                "hd_quality": "高清质量",
-                "good_quality": "良好质量",
-                "standard": "标准分类"
-            }
-            category_display = category_names.get(category, category)
 
             # 简洁的状态显示
-            status_text = f"✅ 分析完成 | {file_name} | {highlight_count}个高光 | 质量:{video_quality}/10 | 归类:{category_display}"
+            status_text = f"✅ 分析完成 | {file_name} | {highlight_count}个高光 | 质量:{video_quality}/10"
             self.analysis_results_label.config(text=status_text)
 
             # 在文本框中显示精简的结果
@@ -2307,7 +2362,6 @@ class ShotDetectionGUI:
                 display_content += f"\n😊 整体情感: {emotions['overall_mood']}"
 
             # 添加归类信息
-            display_content += f"\n\n📁 自动归类: {category_display}"
             display_content += f"\n💾 结果文件: {result_file.name}"
 
             # 显示内容
@@ -2452,8 +2506,1430 @@ class ShotDetectionGUI:
 
         return highlights[:10]  # 最多返回10个高光时刻
 
+    def create_draft_manager_interface(self):
+        """创建剪映草稿管理界面"""
+        if DraftMetaManager is None:
+            # 如果导入失败，显示错误信息
+            error_frame = ttk.Frame(self.draft_frame)
+            error_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
+            # 显示详细的错误信息
+            error_text = "❌ 剪映草稿管理功能不可用\n\n"
+            if import_error:
+                error_text += f"导入错误: {import_error}\n\n"
 
+            error_text += "可能的解决方案:\n"
+            error_text += "1. 确保 jianying 目录存在\n"
+            error_text += "2. 检查 Python 路径设置\n"
+            error_text += "3. 安装缺失的依赖包 (如 yaml)\n"
+            error_text += "4. 重启应用程序"
+
+            error_label = ttk.Label(error_frame,
+                text=error_text,
+                font=("Arial", 10), foreground="red", justify=tk.LEFT)
+            error_label.pack(expand=True)
+
+            # 添加重试按钮
+            retry_button = ttk.Button(error_frame, text="重试导入", command=self.retry_import_jianying)
+            retry_button.pack(pady=10)
+            return
+
+        # 项目管理区域
+        self.create_draft_project_section()
+
+        # 素材管理区域
+        self.create_draft_material_section()
+
+        # 信息显示区域
+        self.create_draft_info_section()
+
+    def retry_import_jianying(self):
+        """重试导入剪映模块"""
+        global DraftMetaManager, MaterialInfo, DraftContentManager, import_error
+
+        try:
+            # 重新执行导入
+            DraftMetaManager, MaterialInfo, DraftContentManager, import_error = import_jianying_modules()
+
+            if DraftMetaManager is not None:
+                # 导入成功，重新创建界面
+                messagebox.showinfo("成功", "剪映模块导入成功！正在重新加载界面...")
+
+                # 清空当前界面
+                for widget in self.draft_frame.winfo_children():
+                    widget.destroy()
+
+                # 重新创建界面
+                self.create_draft_manager_interface()
+            else:
+                # 导入仍然失败
+                messagebox.showerror("失败", f"重试导入失败:\n{import_error}")
+
+        except Exception as e:
+            messagebox.showerror("错误", f"重试导入时发生错误:\n{e}")
+
+    def _is_valid_template_file(self, template_data: dict, template_path: Path) -> bool:
+        """验证是否是有效的模板文件"""
+
+        # 对于标准项目文件名，询问用户确认而不是直接拒绝
+        if template_path.name in ["draft_content.json", "draft_meta_info.json", "draft_virtual_store.json"]:
+            result = messagebox.askyesno(
+                "确认文件类型",
+                f"您选择的文件名是: {template_path.name}\n\n"
+                f"这个文件名通常用于剪映项目文件，但也可能是模板文件。\n\n"
+                f"如果这确实是一个模板文件，请点击'是'继续。\n"
+                f"如果这是一个项目文件，请点击'否'重新选择。\n\n"
+                f"是否继续使用此文件作为模板？"
+            )
+            if not result:
+                return False
+
+        # 检查是否包含项目特有的字段（说明这可能是项目文件而不是模板）
+        project_indicators = [
+            "source",  # 项目文件通常有source字段
+            "static_cover_image_path",  # 项目文件特有
+            "retouch_cover"  # 项目文件特有
+        ]
+
+        # 检查是否有具体的项目数据（更强的项目文件指示器）
+        strong_project_indicators = []
+
+        # 检查是否有具体的素材数据
+        materials = template_data.get("materials", {})
+        if isinstance(materials, dict):
+            for material_type, material_list in materials.items():
+                if isinstance(material_list, list) and len(material_list) > 0:
+                    # 检查是否包含具体的文件路径
+                    for material in material_list:
+                        if isinstance(material, dict) and "file_Path" in material:
+                            file_path = material.get("file_Path", "")
+                            if file_path and not file_path.startswith("template_"):
+                                strong_project_indicators.append(f"具体素材路径: {file_path}")
+                                break
+
+        # 检查是否有具体的轨道数据
+        tracks = template_data.get("tracks", [])
+        if isinstance(tracks, list):
+            for track in tracks:
+                if isinstance(track, dict):
+                    segments = track.get("segments", [])
+                    if isinstance(segments, list) and len(segments) > 0:
+                        strong_project_indicators.append("包含具体的轨道片段数据")
+                        break
+
+        # 如果有强项目指示器，询问用户
+        if strong_project_indicators:
+            indicators_text = "\n".join(f"• {indicator}" for indicator in strong_project_indicators[:3])
+            result = messagebox.askyesno(
+                "检测到项目数据",
+                f"选择的文件包含具体的项目数据：\n\n"
+                f"{indicators_text}\n\n"
+                f"这通常表示这是一个项目文件而不是模板文件。\n"
+                f"模板文件应该包含通用结构，不包含具体数据。\n\n"
+                f"是否仍要继续使用此文件作为模板？"
+            )
+            if not result:
+                return False
+
+        # 如果包含多个一般项目字段，轻度提醒
+        elif sum(1 for field in project_indicators if field in template_data) >= 2:
+            result = messagebox.askyesno(
+                "确认使用",
+                f"选择的文件包含一些项目特有字段。\n\n"
+                f"文件: {template_path.name}\n\n"
+                f"这可能是项目文件，也可能是包含完整信息的模板文件。\n\n"
+                f"是否继续使用此文件作为模板？"
+            )
+            if not result:
+                return False
+
+        # 检查必需的模板字段
+        required_fields = [
+            "canvas_config", "config", "keyframes", "materials",
+            "platform", "tracks", "version"
+        ]
+
+        missing_fields = []
+        for field in required_fields:
+            if field not in template_data:
+                missing_fields.append(field)
+
+        if missing_fields:
+            messagebox.showerror(
+                "模板格式错误",
+                f"选择的文件缺少必需的字段，不是有效的模板文件！\n\n"
+                f"缺少字段: {', '.join(missing_fields)}\n\n"
+                f"请选择正确的模板文件。"
+            )
+            return False
+
+        # 检查canvas_config结构
+        canvas_config = template_data.get("canvas_config", {})
+        if not all(key in canvas_config for key in ["width", "height", "ratio"]):
+            messagebox.showerror(
+                "模板格式错误",
+                f"模板文件的canvas_config结构不完整！\n\n"
+                f"需要包含: width, height, ratio\n\n"
+                f"请选择正确的模板文件。"
+            )
+            return False
+
+        return True
+
+    def show_project_creation_dialog(self, template_path: Path, default_parent: Path):
+        """显示项目创建对话框"""
+        import tkinter as tk
+        from tkinter import ttk, filedialog, messagebox
+
+        # 创建对话框窗口
+        dialog = tk.Toplevel(self.root)
+        dialog.title("从模板创建项目")
+        dialog.geometry("500x300")
+        dialog.resizable(False, False)
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # 居中显示
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
+        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
+        dialog.geometry(f"+{x}+{y}")
+
+        result = None
+
+        # 主框架
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # 模板信息
+        ttk.Label(main_frame, text="📄 选择的模板:", font=("Arial", 10, "bold")).pack(anchor=tk.W)
+        ttk.Label(main_frame, text=template_path.name, foreground="blue").pack(anchor=tk.W, pady=(0, 15))
+
+        # 项目名称
+        ttk.Label(main_frame, text="📝 项目名称:", font=("Arial", 10, "bold")).pack(anchor=tk.W)
+        name_var = tk.StringVar(value=f"从模板创建_{template_path.stem}")
+        name_entry = ttk.Entry(main_frame, textvariable=name_var, width=50)
+        name_entry.pack(fill=tk.X, pady=(5, 15))
+        name_entry.select_range(0, tk.END)
+        name_entry.focus()
+
+        # 保存位置
+        ttk.Label(main_frame, text="📁 保存位置:", font=("Arial", 10, "bold")).pack(anchor=tk.W)
+
+        location_frame = ttk.Frame(main_frame)
+        location_frame.pack(fill=tk.X, pady=(5, 15))
+
+        location_var = tk.StringVar(value=str(default_parent))
+        location_entry = ttk.Entry(location_frame, textvariable=location_var, state="readonly")
+        location_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        def browse_location():
+            new_location = filedialog.askdirectory(
+                title="选择项目保存位置",
+                initialdir=str(default_parent)
+            )
+            if new_location:
+                location_var.set(new_location)
+
+        ttk.Button(location_frame, text="浏览...", command=browse_location).pack(side=tk.RIGHT, padx=(5, 0))
+
+        # 预览信息
+        preview_frame = ttk.LabelFrame(main_frame, text="📋 项目预览", padding="10")
+        preview_frame.pack(fill=tk.X, pady=(0, 15))
+
+        def update_preview():
+            project_name = name_var.get().strip()
+            project_location = location_var.get()
+            if project_name and project_location:
+                full_path = Path(project_location) / project_name
+                preview_text.config(state=tk.NORMAL)
+                preview_text.delete(1.0, tk.END)
+                preview_text.insert(tk.END, f"完整路径: {full_path}\n")
+                preview_text.insert(tk.END, f"模板: {template_path.name}\n")
+                preview_text.insert(tk.END, f"将创建的文件:\n")
+                preview_text.insert(tk.END, f"  • draft_content.json\n")
+                preview_text.insert(tk.END, f"  • draft_meta_info.json\n")
+                preview_text.insert(tk.END, f"  • draft_virtual_store.json")
+                preview_text.config(state=tk.DISABLED)
+
+        preview_text = tk.Text(preview_frame, height=6, wrap=tk.WORD, state=tk.DISABLED)
+        preview_text.pack(fill=tk.X)
+
+        # 绑定更新事件
+        name_var.trace('w', lambda *args: update_preview())
+        location_var.trace('w', lambda *args: update_preview())
+        update_preview()
+
+        # 按钮框架
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=(10, 0))
+
+        def on_create():
+            nonlocal result
+            project_name = name_var.get().strip()
+            project_location = location_var.get().strip()
+
+            if not project_name:
+                messagebox.showerror("错误", "请输入项目名称")
+                return
+
+            if not project_location:
+                messagebox.showerror("错误", "请选择保存位置")
+                return
+
+            # 检查项目是否已存在
+            full_path = Path(project_location) / project_name
+            if full_path.exists():
+                if not messagebox.askyesno("项目已存在",
+                    f"项目 '{project_name}' 已存在。\n\n是否覆盖现有项目？"):
+                    return
+
+            result = (project_name, Path(project_location))
+            dialog.destroy()
+
+        def on_cancel():
+            dialog.destroy()
+
+        ttk.Button(button_frame, text="创建项目", command=on_create).pack(side=tk.RIGHT, padx=(5, 0))
+        ttk.Button(button_frame, text="取消", command=on_cancel).pack(side=tk.RIGHT)
+
+        # 等待对话框关闭
+        dialog.wait_window()
+
+        return result
+
+    def create_draft_project_section(self):
+        """创建项目管理区域"""
+        project_frame = ttk.LabelFrame(self.draft_frame, text="📁 项目管理", padding="10")
+        project_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
+
+        # 项目路径选择
+        path_frame = ttk.Frame(project_frame)
+        path_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(path_frame, text="项目路径:").pack(side=tk.LEFT, padx=(0, 5))
+
+        path_entry = ttk.Entry(path_frame, textvariable=self.draft_project_path, width=50)
+        path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+
+        ttk.Button(path_frame, text="选择目录",
+                  command=self.select_draft_directory).pack(side=tk.LEFT, padx=(0, 5))
+
+        # 操作按钮
+        button_frame = ttk.Frame(project_frame)
+        button_frame.pack(fill=tk.X)
+
+        ttk.Button(button_frame, text="新建项目",
+                  command=self.create_new_draft_project).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="加载项目",
+                  command=self.load_draft_project).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="保存项目",
+                  command=self.save_draft_project).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="项目另存为",
+                  command=self.save_draft_project_as).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="使用模板",
+                  command=self.load_from_template).pack(side=tk.LEFT, padx=(0, 5))
+
+        # 项目信息显示
+        info_frame = ttk.Frame(project_frame)
+        info_frame.pack(fill=tk.X, pady=(10, 0))
+
+        self.draft_project_info = tk.Text(info_frame, height=3, wrap=tk.WORD, state=tk.DISABLED)
+        self.draft_project_info.pack(fill=tk.X)
+
+    def create_draft_material_section(self):
+        """创建素材管理区域"""
+        material_frame = ttk.LabelFrame(self.draft_frame, text="🎬 素材管理", padding="10")
+        material_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        # 添加素材按钮
+        button_frame = ttk.Frame(material_frame)
+        button_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Button(button_frame, text="添加视频",
+                  command=lambda: self.add_draft_material("video")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="添加音频",
+                  command=lambda: self.add_draft_material("audio")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="添加图片",
+                  command=lambda: self.add_draft_material("image")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="批量添加",
+                  command=self.batch_add_draft_materials).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="删除选中",
+                  command=self.remove_selected_draft_material).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="刷新列表",
+                  command=self.refresh_draft_material_list).pack(side=tk.LEFT)
+
+        # 素材列表
+        list_frame = ttk.Frame(material_frame)
+        list_frame.pack(fill=tk.BOTH, expand=True)
+
+        # 创建Treeview
+        columns = ("类型", "文件名", "尺寸", "时长", "路径")
+        self.draft_material_tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=8)
+
+        # 设置列标题和宽度
+        self.draft_material_tree.heading("类型", text="类型")
+        self.draft_material_tree.heading("文件名", text="文件名")
+        self.draft_material_tree.heading("尺寸", text="尺寸")
+        self.draft_material_tree.heading("时长", text="时长")
+        self.draft_material_tree.heading("路径", text="路径")
+
+        self.draft_material_tree.column("类型", width=60)
+        self.draft_material_tree.column("文件名", width=150)
+        self.draft_material_tree.column("尺寸", width=100)
+        self.draft_material_tree.column("时长", width=80)
+        self.draft_material_tree.column("路径", width=300)
+
+        self.draft_material_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # 滚动条
+        tree_scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL,
+                                      command=self.draft_material_tree.yview)
+        tree_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.draft_material_tree.configure(yscrollcommand=tree_scrollbar.set)
+
+        # 绑定双击事件
+        self.draft_material_tree.bind("<Double-1>", self.on_draft_material_double_click)
+
+    def create_draft_info_section(self):
+        """创建信息显示区域"""
+        info_frame = ttk.LabelFrame(self.draft_frame, text="📋 详细信息", padding="10")
+        info_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
+
+        # 创建滚动文本框
+        self.draft_info_text = scrolledtext.ScrolledText(info_frame, wrap=tk.WORD, height=8)
+        self.draft_info_text.pack(fill=tk.BOTH, expand=True)
+
+    # 剪映草稿管理功能方法
+    def select_draft_directory(self):
+        """选择项目目录"""
+        directory = filedialog.askdirectory(title="选择项目目录")
+        if directory:
+            self.draft_project_path.set(directory)
+
+    def create_new_draft_project(self):
+        """创建新项目"""
+        project_path = self.draft_project_path.get().strip()
+        if not project_path:
+            messagebox.showerror("错误", "请先选择或输入项目路径")
+            return
+
+        try:
+            # 创建项目目录
+            project_dir = Path(project_path)
+            project_dir.mkdir(parents=True, exist_ok=True)
+
+            # 创建管理器
+            self.current_draft_manager = DraftMetaManager(project_dir)
+            self.current_project_path = project_dir
+
+            # 创建默认元数据
+            meta_data = self.current_draft_manager.load_meta_data()
+
+            # 更新界面
+            self.update_draft_project_info()
+            self.refresh_draft_material_list()
+
+            self.log_draft_info(f"成功创建新项目: {project_path}")
+            messagebox.showinfo("成功", f"项目创建成功: {project_dir.name}")
+
+        except Exception as e:
+            self.log_draft_error(f"创建项目失败: {e}")
+            messagebox.showerror("错误", f"创建项目失败: {e}")
+
+    def load_draft_project(self):
+        """加载现有项目"""
+        project_path = self.draft_project_path.get().strip()
+        if not project_path:
+            messagebox.showerror("错误", "请先选择项目路径")
+            return
+
+        try:
+            project_dir = Path(project_path)
+            if not project_dir.exists():
+                messagebox.showerror("错误", "项目目录不存在")
+                return
+
+            # 创建管理器并加载
+            self.current_draft_manager = DraftMetaManager(project_dir)
+            self.current_project_path = project_dir
+
+            meta_data = self.current_draft_manager.load_meta_data()
+
+            # 更新界面
+            self.update_draft_project_info()
+            self.refresh_draft_material_list()
+
+            self.log_draft_info(f"成功加载项目: {project_path}")
+            messagebox.showinfo("成功", f"项目加载成功: {project_dir.name}")
+
+        except Exception as e:
+            self.log_draft_error(f"加载项目失败: {e}")
+            messagebox.showerror("错误", f"加载项目失败: {e}")
+
+    def save_draft_project(self):
+        """保存项目"""
+        if not self.current_draft_manager:
+            messagebox.showerror("错误", "没有打开的项目")
+            return
+
+        try:
+            success = self.current_draft_manager.save_meta_data()
+            if success:
+                self.log_draft_info("项目保存成功")
+                messagebox.showinfo("成功", "项目保存成功")
+            else:
+                messagebox.showerror("错误", "项目保存失败")
+
+        except Exception as e:
+            self.log_draft_error(f"保存项目失败: {e}")
+            messagebox.showerror("错误", f"保存项目失败: {e}")
+
+    def save_draft_project_as(self):
+        """项目另存为"""
+        if not self.current_draft_manager:
+            messagebox.showerror("错误", "没有打开的项目")
+            return
+
+        # 选择保存目录
+        save_directory = filedialog.askdirectory(title="选择项目另存为的目录")
+        if not save_directory:
+            return
+
+        # 输入新项目名称
+        from tkinter import simpledialog
+        new_project_name = simpledialog.askstring(
+            "项目另存为",
+            "请输入新项目名称:",
+            initialvalue=f"{self.current_project_path.name}_副本" if self.current_project_path else "新项目"
+        )
+
+        if not new_project_name:
+            return
+
+        try:
+            # 创建新项目目录
+            new_project_path = Path(save_directory) / new_project_name
+            new_project_path.mkdir(parents=True, exist_ok=True)
+
+            # 创建新的管理器实例
+            new_manager = DraftMetaManager(new_project_path)
+
+            # 复制当前项目的元数据
+            if self.current_draft_manager._meta_data:
+                # 深拷贝元数据，更新项目相关信息
+                import copy
+                new_meta_data = copy.deepcopy(self.current_draft_manager._meta_data)
+
+                # 更新项目信息
+                import time
+                import uuid
+                current_time_ms = int(time.time() * 1000000)
+
+                new_meta_data["draft_id"] = str(uuid.uuid4()).upper()
+                new_meta_data["draft_name"] = new_project_name
+                new_meta_data["draft_fold_path"] = str(new_project_path)
+                new_meta_data["draft_root_path"] = str(new_project_path.parent)
+                new_meta_data["tm_draft_create"] = current_time_ms
+                new_meta_data["tm_draft_modified"] = current_time_ms
+
+                # 设置新管理器的元数据
+                new_manager._meta_data = new_meta_data
+
+            # 复制虚拟存储数据
+            if self.current_draft_manager._virtual_store_data:
+                import copy
+                new_manager._virtual_store_data = copy.deepcopy(self.current_draft_manager._virtual_store_data)
+
+            # 保存新项目
+            success = new_manager.save_meta_data()
+
+            if success:
+                self.log_draft_info(f"项目另存为成功: {new_project_path}")
+
+                # 询问是否切换到新项目
+                switch_to_new = messagebox.askyesno(
+                    "另存为成功",
+                    f"项目已另存为: {new_project_name}\n\n是否切换到新项目？"
+                )
+
+                if switch_to_new:
+                    # 切换到新项目
+                    self.current_draft_manager = new_manager
+                    self.current_project_path = new_project_path
+                    self.draft_project_path.set(str(new_project_path))
+
+                    # 更新界面
+                    self.update_draft_project_info()
+                    self.refresh_draft_material_list()
+
+                    self.log_draft_info(f"已切换到新项目: {new_project_name}")
+
+                messagebox.showinfo("成功", f"项目另存为成功!\n\n新项目路径: {new_project_path}")
+            else:
+                messagebox.showerror("错误", "项目另存为失败")
+
+        except Exception as e:
+            self.log_draft_error(f"项目另存为失败: {e}")
+            messagebox.showerror("错误", f"项目另存为失败: {e}")
+
+    def load_from_template(self):
+        """使用模板创建项目"""
+        # 检查剪映模块是否可用
+        if DraftContentManager is None or DraftMetaManager is None:
+            messagebox.showerror(
+                "功能不可用",
+                "剪映模块未正确加载，无法使用模板功能。\n\n"
+                "请检查:\n"
+                "1. jianying 目录是否存在\n"
+                "2. 相关模块是否正确安装\n"
+                "3. 点击界面上的'重试导入'按钮"
+            )
+            return
+
+        try:
+            # 选择模板文件
+            template_file = filedialog.askopenfilename(
+                title="选择模板文件 (不是项目文件)",
+                filetypes=[
+                    ("JSON模板文件", "*.json"),
+                    ("所有文件", "*.*")
+                ],
+                initialdir=str(Path(__file__).parent / "templates")
+            )
+
+            if not template_file:
+                return
+
+            template_path = Path(template_file)
+
+            # 检查是否选择了项目文件而不是模板文件
+            if template_path.name in ["draft_content.json", "draft_meta_info.json", "draft_virtual_store.json"]:
+                messagebox.showerror(
+                    "文件类型错误",
+                    f"您选择的是剪映项目文件，不是模板文件！\n\n"
+                    f"选择的文件: {template_path.name}\n\n"
+                    f"请选择:\n"
+                    f"• 模板文件 (通常在 templates/ 目录下)\n"
+                    f"• 文件名不应该是 draft_content.json 等项目文件\n\n"
+                    f"如果您想从现有项目创建模板，请:\n"
+                    f"1. 先加载该项目\n"
+                    f"2. 使用'项目另存为'功能\n"
+                    f"3. 或使用专门的'保存为模板'功能"
+                )
+                return
+
+            # 验证模板文件内容
+            try:
+                import json
+                with open(template_path, 'r', encoding='utf-8') as f:
+                    template_data = json.load(f)
+
+                # 检查是否是有效的模板文件
+                if not self._is_valid_template_file(template_data, template_path):
+                    return
+
+            except json.JSONDecodeError:
+                messagebox.showerror(
+                    "文件格式错误",
+                    f"选择的文件不是有效的JSON格式！\n\n"
+                    f"文件: {template_path.name}\n\n"
+                    f"请选择正确的模板文件。"
+                )
+                return
+            except Exception as e:
+                messagebox.showerror(
+                    "文件读取错误",
+                    f"无法读取选择的文件！\n\n"
+                    f"文件: {template_path.name}\n"
+                    f"错误: {e}\n\n"
+                    f"请检查文件是否存在且有读取权限。"
+                )
+                return
+
+            # 检查是否有当前项目
+            if self.current_draft_manager:
+                # 询问是否保存当前项目
+                save_current = messagebox.askyesnocancel(
+                    "使用模板",
+                    "当前有打开的项目，是否先保存当前项目？\n\n"
+                    "是：保存当前项目后使用模板\n"
+                    "否：不保存直接使用模板\n"
+                    "取消：取消操作"
+                )
+
+                if save_current is None:  # 用户点击取消
+                    return
+                elif save_current:  # 用户选择保存
+                    self.save_draft_project()
+
+            # 智能选择项目目录
+            if self.current_project_path:
+                # 如果有当前项目，在同级目录创建
+                default_parent = self.current_project_path.parent
+            else:
+                # 否则使用默认的项目目录
+                default_parent = Path.home() / "Documents" / "剪映项目"
+                default_parent.mkdir(parents=True, exist_ok=True)
+
+            # 简化的项目创建流程
+            from tkinter import simpledialog
+
+            # 输入项目名称
+            project_name = simpledialog.askstring(
+                "使用模板创建项目",
+                f"请输入新项目名称:\n\n"
+                f"模板: {template_path.name}\n"
+                f"保存位置: {default_parent}\n\n"
+                f"项目名称:",
+                initialvalue=f"从模板创建_{template_path.stem}"
+            )
+
+            if not project_name or not project_name.strip():
+                return
+
+            project_name = project_name.strip()
+            project_parent = default_parent
+
+            # 创建新项目目录
+            new_project_path = project_parent / project_name
+            new_project_path.mkdir(parents=True, exist_ok=True)
+
+            # 创建内容管理器并从模板加载
+            content_manager = DraftContentManager(new_project_path)
+
+            # 添加详细的错误捕获
+            self.log_draft_info(f"开始从模板加载: {template_path}")
+            success = content_manager.load_from_template(template_path)
+
+            if success:
+                self.log_draft_info("模板加载成功，开始保存项目文件")
+
+                # 保存draft_content.json
+                save_success = content_manager.save_content_data()
+
+                if save_success:
+                    self.log_draft_info("draft_content.json 保存成功")
+                else:
+                    self.log_draft_error("draft_content.json 保存失败")
+
+                # 创建元数据管理器并保存元数据
+                meta_manager = DraftMetaManager(new_project_path)
+                meta_manager.load_meta_data()
+                meta_success = meta_manager.save_meta_data()
+
+                if meta_success:
+                    self.log_draft_info("元数据保存成功")
+                else:
+                    self.log_draft_error("元数据保存失败")
+
+                save_success = save_success and meta_success
+
+                if save_success:
+                    # 切换到新项目
+                    self.current_draft_manager = meta_manager
+                    self.current_project_path = new_project_path
+                    self.draft_project_path.set(str(new_project_path))
+
+                    # 更新界面
+                    self.update_draft_project_info()
+                    self.refresh_draft_material_list()
+
+                    self.log_draft_info(f"成功从模板创建项目: {project_name}")
+                    messagebox.showinfo(
+                        "成功",
+                        f"成功从模板创建项目！\n\n"
+                        f"模板: {template_path.name}\n"
+                        f"项目: {project_name}\n"
+                        f"路径: {new_project_path}"
+                    )
+                else:
+                    error_msg = "项目保存失败\n\n"
+                    if not save_success:
+                        error_msg += "- draft_content.json 保存失败\n"
+                    if not meta_success:
+                        error_msg += "- 元数据保存失败\n"
+
+                    self.log_draft_error(error_msg)
+                    messagebox.showerror("错误", error_msg)
+            else:
+                # 获取更详细的错误信息
+                error_msg = f"模板加载失败\n\n模板文件: {template_path}\n\n"
+                error_msg += "可能的原因:\n"
+                error_msg += "1. 模板文件格式不正确\n"
+                error_msg += "2. 模板缺少必需字段\n"
+                error_msg += "3. 文件读取权限问题\n"
+                error_msg += "4. JSON格式错误\n\n"
+                error_msg += "请检查日志获取详细信息"
+
+                self.log_draft_error(f"模板加载失败: {template_path}")
+                messagebox.showerror("模板加载失败", error_msg)
+
+        except Exception as e:
+            self.log_draft_error(f"使用模板失败: {e}")
+            messagebox.showerror("错误", f"使用模板失败: {e}")
+
+    def add_draft_material(self, material_type):
+        """添加素材"""
+        if not self.current_draft_manager:
+            messagebox.showerror("错误", "请先创建或加载项目")
+            return
+
+        # 文件类型过滤器
+        filetypes = {
+            "video": [("视频文件", "*.mp4 *.avi *.mov *.mkv *.wmv *.flv"), ("所有文件", "*.*")],
+            "audio": [("音频文件", "*.mp3 *.wav *.aac *.flac *.ogg"), ("所有文件", "*.*")],
+            "image": [("图片文件", "*.jpg *.jpeg *.png *.gif *.bmp *.tiff"), ("所有文件", "*.*")]
+        }
+
+        file_path = filedialog.askopenfilename(
+            title=f"选择{material_type}文件",
+            filetypes=filetypes.get(material_type, [("所有文件", "*.*")])
+        )
+
+        if file_path:
+            self.add_draft_material_file(file_path, material_type)
+
+    def add_draft_material_file(self, file_path, material_type):
+        """添加单个素材文件"""
+        try:
+            file_path_obj = Path(file_path)
+
+            # 创建素材信息
+            material = MaterialInfo(
+                file_path=str(file_path_obj),
+                name=file_path_obj.name,
+                material_type=material_type
+            )
+
+            # 添加到项目
+            material_id = self.current_draft_manager.add_material(material)
+
+            # 刷新列表
+            self.refresh_draft_material_list()
+
+            self.log_draft_info(f"成功添加{material_type}素材: {file_path_obj.name}")
+
+        except Exception as e:
+            self.log_draft_error(f"添加素材失败: {e}")
+            messagebox.showerror("错误", f"添加素材失败: {e}")
+
+    def batch_add_draft_materials(self):
+        """批量添加素材"""
+        if not self.current_draft_manager:
+            messagebox.showerror("错误", "请先创建或加载项目")
+            return
+
+        file_paths = filedialog.askopenfilenames(
+            title="批量选择素材文件",
+            filetypes=[
+                ("媒体文件", "*.mp4 *.avi *.mov *.mp3 *.wav *.jpg *.png"),
+                ("所有文件", "*.*")
+            ]
+        )
+
+        if file_paths:
+            success_count = 0
+            for file_path in file_paths:
+                try:
+                    # 根据文件扩展名判断类型
+                    ext = Path(file_path).suffix.lower()
+                    if ext in ['.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv']:
+                        material_type = "video"
+                    elif ext in ['.mp3', '.wav', '.aac', '.flac', '.ogg']:
+                        material_type = "audio"
+                    elif ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff']:
+                        material_type = "image"
+                    else:
+                        material_type = "video"  # 默认为视频
+
+                    self.add_draft_material_file(file_path, material_type)
+                    success_count += 1
+
+                except Exception as e:
+                    self.log_draft_error(f"添加文件失败 {file_path}: {e}")
+
+            messagebox.showinfo("完成", f"批量添加完成，成功添加 {success_count} 个文件")
+
+    def remove_selected_draft_material(self):
+        """删除选中的素材"""
+        if not self.current_draft_manager:
+            messagebox.showerror("错误", "没有打开的项目")
+            return
+
+        selected_items = self.draft_material_tree.selection()
+        if not selected_items:
+            messagebox.showwarning("警告", "请先选择要删除的素材")
+            return
+
+        if messagebox.askyesno("确认", f"确定要删除选中的 {len(selected_items)} 个素材吗？"):
+            for item in selected_items:
+                try:
+                    # 获取素材ID（存储在item的tags中）
+                    material_id = self.draft_material_tree.item(item)['tags'][0] if self.draft_material_tree.item(item)['tags'] else None
+                    if material_id:
+                        self.current_draft_manager.remove_material(material_id)
+
+                except Exception as e:
+                    self.log_draft_error(f"删除素材失败: {e}")
+
+            self.refresh_draft_material_list()
+            self.log_draft_info(f"删除了 {len(selected_items)} 个素材")
+
+    def refresh_draft_material_list(self):
+        """刷新素材列表"""
+        # 清空现有项目
+        for item in self.draft_material_tree.get_children():
+            self.draft_material_tree.delete(item)
+
+        if not self.current_draft_manager:
+            return
+
+        try:
+            # 直接遍历draft_materials避免重复
+            if self.current_draft_manager._meta_data is None:
+                return
+
+            draft_materials = self.current_draft_manager._meta_data.get("draft_materials", [])
+
+            for material_group in draft_materials:
+                materials = material_group.get("value", [])
+
+                for material in materials:
+                    # 根据metetype确定显示的类型
+                    metetype = material.get('metetype', 'unknown')
+                    if metetype == 'video':
+                        display_type = 'video'
+                    elif metetype == 'audio':
+                        display_type = 'audio'
+                    elif metetype == 'photo':
+                        display_type = 'image'
+                    else:
+                        display_type = metetype
+
+                    # 格式化显示信息
+                    file_name = material.get('extra_info', 'N/A')
+
+                    # 尺寸信息
+                    width = material.get('width', 0)
+                    height = material.get('height', 0)
+                    size_str = f"{width}x{height}" if width and height else "N/A"
+
+                    # 时长信息
+                    duration = material.get('duration', 0)
+                    duration_str = f"{duration/1000000:.2f}s" if duration > 0 else "N/A"
+
+                    # 文件路径
+                    file_path = material.get('file_Path', 'N/A')
+
+                    # 插入到树形视图
+                    item = self.draft_material_tree.insert('', 'end', values=(
+                        display_type,
+                        file_name,
+                        size_str,
+                        duration_str,
+                        file_path
+                    ), tags=(material.get('id', ''),))
+
+        except Exception as e:
+            self.log_draft_error(f"刷新素材列表失败: {e}")
+
+    def on_draft_material_double_click(self, event):
+        """素材双击事件"""
+        selected_item = self.draft_material_tree.selection()[0] if self.draft_material_tree.selection() else None
+        if selected_item:
+            # 获取素材ID
+            material_id = self.draft_material_tree.item(selected_item)['tags'][0] if self.draft_material_tree.item(selected_item)['tags'] else None
+            if material_id:
+                self.show_draft_material_details(material_id)
+
+    def show_draft_material_details(self, material_id):
+        """显示素材详细信息"""
+        if not self.current_draft_manager:
+            return
+
+        try:
+            # 查找素材
+            material_types = ["video", "audio", "image", "text", "other"]
+            found_material = None
+
+            for material_type in material_types:
+                materials = self.current_draft_manager.get_materials_by_type(material_type)
+                for material in materials:
+                    if material.get('id') == material_id:
+                        found_material = material
+                        break
+                if found_material:
+                    break
+
+            if found_material:
+                # 格式化显示详细信息
+                details = "素材详细信息:\n"
+                details += "=" * 50 + "\n"
+
+                for key, value in found_material.items():
+                    if key == 'duration' and isinstance(value, int):
+                        details += f"{key}: {value} 微秒 ({value/1000000:.2f} 秒)\n"
+                    elif key in ['create_time', 'import_time']:
+                        import datetime
+                        dt = datetime.datetime.fromtimestamp(value)
+                        details += f"{key}: {value} ({dt.strftime('%Y-%m-%d %H:%M:%S')})\n"
+                    else:
+                        details += f"{key}: {value}\n"
+
+                self.draft_info_text.delete(1.0, tk.END)
+                self.draft_info_text.insert(1.0, details)
+
+        except Exception as e:
+            self.log_draft_error(f"显示素材详情失败: {e}")
+
+    def update_draft_project_info(self):
+        """更新项目信息显示"""
+        if not self.current_draft_manager:
+            self.draft_project_info.config(state=tk.NORMAL)
+            self.draft_project_info.delete(1.0, tk.END)
+            self.draft_project_info.config(state=tk.DISABLED)
+            return
+
+        try:
+            project_info = self.current_draft_manager.get_project_info()
+
+            info_text = f"项目名称: {project_info.get('project_name', 'N/A')}\n"
+            info_text += f"项目ID: {project_info.get('project_id', 'N/A')}\n"
+            info_text += f"项目路径: {project_info.get('project_path', 'N/A')}"
+
+            self.draft_project_info.config(state=tk.NORMAL)
+            self.draft_project_info.delete(1.0, tk.END)
+            self.draft_project_info.insert(1.0, info_text)
+            self.draft_project_info.config(state=tk.DISABLED)
+
+        except Exception as e:
+            self.log_draft_error(f"更新项目信息失败: {e}")
+
+    def log_draft_info(self, message):
+        """记录信息日志"""
+        self.draft_info_text.insert(tk.END, f"[INFO] {message}\n")
+        self.draft_info_text.see(tk.END)
+
+    def log_draft_error(self, message):
+        """记录错误日志"""
+        self.draft_info_text.insert(tk.END, f"[ERROR] {message}\n")
+        self.draft_info_text.see(tk.END)
+
+    def create_video_mix_interface(self):
+        """创建视频混剪界面"""
+        # 添加混剪变量
+        self.mix_materials_dir = tk.StringVar()
+        self.mix_templates_dir = tk.StringVar()
+        self.mix_output_dir = tk.StringVar()
+
+        # 标题
+        title_label = ttk.Label(self.video_mix_frame, text="🎬 视频混剪", style='Heading.TLabel')
+        title_label.pack(pady=(0, 20))
+
+        # 目录选择区域
+        dirs_frame = ttk.Frame(self.video_mix_frame)
+        dirs_frame.pack(fill=tk.X, pady=(0, 20))
+
+        # 素材目录
+        materials_frame = ttk.LabelFrame(dirs_frame, text="📹 素材目录", padding="15")
+        materials_frame.pack(fill=tk.X, pady=(0, 10))
+
+        materials_entry = ttk.Entry(materials_frame, textvariable=self.mix_materials_dir, width=60)
+        materials_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        def select_materials_directory():
+            directory = filedialog.askdirectory(title="选择素材目录")
+            if directory:
+                self.mix_materials_dir.set(directory)
+
+        ttk.Button(materials_frame, text="浏览", command=select_materials_directory).pack(side=tk.RIGHT)
+
+        # 模板目录
+        templates_frame = ttk.LabelFrame(dirs_frame, text="📋 模板目录", padding="15")
+        templates_frame.pack(fill=tk.X, pady=(0, 10))
+
+        templates_entry = ttk.Entry(templates_frame, textvariable=self.mix_templates_dir, width=60)
+        templates_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        def select_templates_directory():
+            directory = filedialog.askdirectory(title="选择模板目录")
+            if directory:
+                self.mix_templates_dir.set(directory)
+
+        ttk.Button(templates_frame, text="浏览", command=select_templates_directory).pack(side=tk.RIGHT)
+
+        # 输出目录
+        output_frame = ttk.LabelFrame(dirs_frame, text="📤 输出目录", padding="15")
+        output_frame.pack(fill=tk.X, pady=(0, 10))
+
+        output_entry = ttk.Entry(output_frame, textvariable=self.mix_output_dir, width=60)
+        output_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        def select_output_directory():
+            directory = filedialog.askdirectory(title="选择输出目录")
+            if directory:
+                self.mix_output_dir.set(directory)
+
+        ttk.Button(output_frame, text="浏览", command=select_output_directory).pack(side=tk.RIGHT)
+
+        # 操作按钮
+        button_frame = ttk.Frame(self.video_mix_frame)
+        button_frame.pack(fill=tk.X, pady=20)
+
+        # 预览按钮
+        preview_btn = ttk.Button(button_frame, text="🔍 预览",
+                               command=self.run_video_mix_preview, style='Action.TButton')
+        preview_btn.pack(side=tk.LEFT, padx=(0, 15))
+
+        # 开始混剪按钮
+        mix_btn = ttk.Button(button_frame, text="🚀 开始混剪",
+                           command=self.run_video_mix, style='Primary.TButton')
+        mix_btn.pack(side=tk.LEFT, padx=(0, 15))
+
+        # 打开输出目录按钮
+        open_btn = ttk.Button(button_frame, text="📁 打开输出",
+                            command=self.open_video_mix_output)
+        open_btn.pack(side=tk.LEFT)
+
+        # 状态显示
+        status_frame = ttk.LabelFrame(self.video_mix_frame, text="📊 状态", padding="10")
+        status_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.mix_status_text = scrolledtext.ScrolledText(status_frame, height=10, wrap=tk.WORD)
+        self.mix_status_text.pack(fill=tk.BOTH, expand=True)
+
+        # 初始状态
+        self.update_mix_status("等待选择目录...")
+
+    def update_mix_status(self, message):
+        """更新视频混剪状态"""
+        self.mix_status_text.insert(tk.END, f"{message}\n")
+        self.mix_status_text.see(tk.END)
+        self.root.update_idletasks()
+
+    def run_video_mix_preview(self):
+        """运行视频混剪预览模式"""
+        materials_dir = self.mix_materials_dir.get().strip()
+        templates_dir = self.mix_templates_dir.get().strip()
+        output_dir = self.mix_output_dir.get().strip()
+
+        if not materials_dir:
+            messagebox.showerror("错误", "请选择素材目录")
+            return
+
+        if not templates_dir:
+            messagebox.showerror("错误", "请选择模板目录")
+            return
+
+        if not output_dir:
+            messagebox.showerror("错误", "请选择输出目录")
+            return
+
+        if not Path(materials_dir).exists():
+            messagebox.showerror("错误", "素材目录不存在")
+            return
+
+        if not Path(templates_dir).exists():
+            messagebox.showerror("错误", "模板目录不存在")
+            return
+
+        # 创建临时工作目录结构
+        import tempfile
+        temp_work_dir = Path(tempfile.mkdtemp())
+
+        # 创建符合工作流程要求的目录结构
+        temp_resources_dir = temp_work_dir / "resources"
+        temp_templates_dir = temp_work_dir / "templates"
+        temp_output_dir = temp_work_dir / "outputs"
+
+        # 创建符号链接或复制目录
+        try:
+            import shutil
+            shutil.copytree(materials_dir, temp_resources_dir)
+            shutil.copytree(templates_dir, temp_templates_dir)
+            temp_output_dir.mkdir()
+        except Exception as e:
+            messagebox.showerror("错误", f"创建临时工作目录失败: {e}")
+            return
+
+        # 在后台线程中运行预览
+        def run_preview():
+            try:
+                self.update_mix_status("🔍 开始预览...")
+                self.update_mix_status(f"📹 素材目录: {materials_dir}")
+                self.update_mix_status(f"📋 模板目录: {templates_dir}")
+                self.update_mix_status(f"📤 输出目录: {output_dir}")
+
+                # 导入工作流程模块
+                sys.path.insert(0, str(Path(__file__).parent / "jianying"))
+                from run_allocation import DouyinVideoWorkflow
+
+                # 创建工作流程实例，传递原始素材目录
+                workflow = DouyinVideoWorkflow(str(temp_work_dir), str(materials_dir))
+
+                # 步骤1: 扫描资源
+                self.update_mix_status("1️⃣ 扫描素材...")
+                inventory = workflow.step1_scan_resources(['json'])
+                if not inventory:
+                    self.update_mix_status("❌ 无法扫描素材")
+                    return
+
+                # 步骤2: 管理模板
+                self.update_mix_status("2️⃣ 分析模板...")
+                project_manager = workflow.step2_manage_templates()
+                if not project_manager:
+                    self.update_mix_status("❌ 无法分析模板")
+                    return
+
+                # 显示预览信息
+                stats = inventory['statistics']
+                summary = project_manager.get_project_summary()
+
+                self.update_mix_status("\n📊 素材统计:")
+                self.update_mix_status(f"  视频: {stats['video_count']} 个")
+                self.update_mix_status(f"  音频: {stats['audio_count']} 个")
+                self.update_mix_status(f"  图片: {stats['image_count']} 个")
+                self.update_mix_status(f"  总大小: {stats['total_size_mb']} MB")
+
+                self.update_mix_status("\n📋 模板统计:")
+                self.update_mix_status(f"  有效模板: {summary['valid_projects']} 个")
+                self.update_mix_status(f"  无效模板: {summary['invalid_projects']} 个")
+
+                if summary['valid_project_names']:
+                    self.update_mix_status("\n✅ 可用模板:")
+                    for name in summary['valid_project_names']:
+                        self.update_mix_status(f"  - {name}")
+
+                self.update_mix_status("\n🔍 预览完成！")
+
+            except Exception as e:
+                self.update_mix_status(f"❌ 预览失败: {e}")
+            finally:
+                # 清理临时目录
+                try:
+                    shutil.rmtree(temp_work_dir)
+                except:
+                    pass
+
+        # 在后台线程中运行
+        threading.Thread(target=run_preview, daemon=True).start()
+
+    def run_video_mix(self):
+        """运行完整的视频混剪"""
+        materials_dir = self.mix_materials_dir.get().strip()
+        templates_dir = self.mix_templates_dir.get().strip()
+        output_dir = self.mix_output_dir.get().strip()
+
+        if not materials_dir:
+            messagebox.showerror("错误", "请选择素材目录")
+            return
+
+        if not templates_dir:
+            messagebox.showerror("错误", "请选择模板目录")
+            return
+
+        if not output_dir:
+            messagebox.showerror("错误", "请选择输出目录")
+            return
+
+        if not Path(materials_dir).exists():
+            messagebox.showerror("错误", "素材目录不存在")
+            return
+
+        if not Path(templates_dir).exists():
+            messagebox.showerror("错误", "模板目录不存在")
+            return
+
+        # 确认对话框
+        if not messagebox.askyesno("确认", "确定要开始视频混剪吗？\n这将生成大量视频项目文件。"):
+            return
+
+        # 创建工作目录结构
+        import tempfile
+        temp_work_dir = Path(tempfile.mkdtemp())
+
+        # 创建符合工作流程要求的目录结构
+        temp_resources_dir = temp_work_dir / "resources"
+        temp_templates_dir = temp_work_dir / "templates"
+        temp_output_dir = temp_work_dir / "outputs"
+
+        # 创建符号链接或复制目录
+        try:
+            import shutil
+            shutil.copytree(materials_dir, temp_resources_dir)
+            shutil.copytree(templates_dir, temp_templates_dir)
+            temp_output_dir.mkdir()
+        except Exception as e:
+            messagebox.showerror("错误", f"创建工作目录失败: {e}")
+            return
+
+        # 在后台线程中运行完整工作流程
+        def run_full_workflow():
+            try:
+                self.update_mix_status("🚀 开始视频混剪...")
+                self.update_mix_status(f"📹 素材目录: {materials_dir}")
+                self.update_mix_status(f"📋 模板目录: {templates_dir}")
+                self.update_mix_status(f"📤 输出目录: {output_dir}")
+
+                # 导入工作流程模块
+                sys.path.insert(0, str(Path(__file__).parent / "jianying"))
+                from run_allocation import DouyinVideoWorkflow
+
+                # 创建工作流程实例，传递原始素材目录
+                workflow = DouyinVideoWorkflow(str(temp_work_dir), str(materials_dir))
+
+                # 运行完整工作流程
+                success = workflow.run_complete_workflow(['json'])
+
+                if success:
+                    # 复制结果到用户指定的输出目录
+                    self.update_mix_status("📁 复制结果到输出目录...")
+                    final_output_dir = Path(output_dir)
+                    final_output_dir.mkdir(parents=True, exist_ok=True)
+
+                    # 复制生成的项目
+                    for item in temp_output_dir.iterdir():
+                        if item.is_dir():
+                            dest = final_output_dir / item.name
+                            if dest.exists():
+                                shutil.rmtree(dest)
+                            shutil.copytree(item, dest)
+                        else:
+                            shutil.copy2(item, final_output_dir)
+
+                    self.update_mix_status("\n🎉 视频混剪完成！")
+                    self.update_mix_status(f"📁 结果保存在: {output_dir}")
+
+                    # 询问是否打开输出目录
+                    def ask_open_output():
+                        if messagebox.askyesno("完成", "视频混剪完成！\n是否打开输出目录查看结果？"):
+                            self.open_video_mix_output()
+
+                    self.root.after(0, ask_open_output)
+                else:
+                    self.update_mix_status("\n❌ 视频混剪失败！")
+
+            except Exception as e:
+                self.update_mix_status(f"❌ 执行失败: {e}")
+                import traceback
+                self.update_mix_status(f"详细错误: {traceback.format_exc()}")
+            finally:
+                # 清理临时目录
+                try:
+                    shutil.rmtree(temp_work_dir)
+                except:
+                    pass
+
+        # 在后台线程中运行
+        threading.Thread(target=run_full_workflow, daemon=True).start()
+
+    def open_video_mix_output(self):
+        """打开视频混剪输出目录"""
+        output_dir = self.mix_output_dir.get().strip()
+        if not output_dir:
+            messagebox.showwarning("警告", "请先选择输出目录")
+            return
+
+        if not Path(output_dir).exists():
+            messagebox.showwarning("警告", "输出目录不存在，请先运行视频混剪")
+            return
+
+        try:
+            if sys.platform == "win32":
+                os.startfile(str(output_dir))
+            elif sys.platform == "darwin":
+                subprocess.run(["open", str(output_dir)], check=True)
+            else:
+                subprocess.run(["xdg-open", str(output_dir)], check=True)
+        except Exception as e:
+            messagebox.showerror("错误", f"无法打开输出目录: {e}")
+
+    def create_video_mix_interface(self):
+        """创建视频混剪功能界面"""
+        # 添加混剪变量
+        self.mix_materials_dir = tk.StringVar()
+        self.mix_templates_dir = tk.StringVar()
+        self.mix_output_dir = tk.StringVar()
+
+        # 标题
+        title_label = ttk.Label(self.video_mix_frame, text="🎬 视频混剪", style='Heading.TLabel')
+        title_label.pack(pady=(0, 20))
+
+        # 目录选择区域
+        dirs_frame = ttk.Frame(self.video_mix_frame)
+        dirs_frame.pack(fill=tk.X, pady=(0, 20))
+
+        # 素材目录
+        materials_frame = ttk.LabelFrame(dirs_frame, text="📹 素材目录", padding="15")
+        materials_frame.pack(fill=tk.X, pady=(0, 10))
+
+        materials_entry = ttk.Entry(materials_frame, textvariable=self.mix_materials_dir, width=60)
+        materials_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        def select_materials_directory():
+            directory = filedialog.askdirectory(title="选择素材目录")
+            if directory:
+                self.mix_materials_dir.set(directory)
+
+        ttk.Button(materials_frame, text="浏览", command=select_materials_directory).pack(side=tk.RIGHT)
+
+        # 模板目录
+        templates_frame = ttk.LabelFrame(dirs_frame, text="📋 模板目录", padding="15")
+        templates_frame.pack(fill=tk.X, pady=(0, 10))
+
+        templates_entry = ttk.Entry(templates_frame, textvariable=self.mix_templates_dir, width=60)
+        templates_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        def select_templates_directory():
+            directory = filedialog.askdirectory(title="选择模板目录")
+            if directory:
+                self.mix_templates_dir.set(directory)
+
+        ttk.Button(templates_frame, text="浏览", command=select_templates_directory).pack(side=tk.RIGHT)
+
+        # 输出目录
+        output_frame = ttk.LabelFrame(dirs_frame, text="📤 输出目录", padding="15")
+        output_frame.pack(fill=tk.X, pady=(0, 10))
+
+        output_entry = ttk.Entry(output_frame, textvariable=self.mix_output_dir, width=60)
+        output_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        def select_output_directory():
+            directory = filedialog.askdirectory(title="选择输出目录")
+            if directory:
+                self.mix_output_dir.set(directory)
+
+        ttk.Button(output_frame, text="浏览", command=select_output_directory).pack(side=tk.RIGHT)
+
+        # 操作按钮
+        button_frame = ttk.Frame(self.video_mix_frame)
+        button_frame.pack(fill=tk.X, pady=20)
+
+        # 预览按钮
+        preview_btn = ttk.Button(button_frame, text="🔍 预览",
+                               command=self.run_video_mix_preview, style='Action.TButton')
+        preview_btn.pack(side=tk.LEFT, padx=(0, 15))
+
+        # 开始混剪按钮
+        mix_btn = ttk.Button(button_frame, text="🚀 开始混剪",
+                           command=self.run_video_mix, style='Primary.TButton')
+        mix_btn.pack(side=tk.LEFT, padx=(0, 15))
+
+        # 打开输出目录按钮
+        open_btn = ttk.Button(button_frame, text="📁 打开输出",
+                            command=self.open_video_mix_output)
+        open_btn.pack(side=tk.LEFT)
+
+        # 状态显示
+        status_frame = ttk.LabelFrame(self.video_mix_frame, text="📊 状态", padding="10")
+        status_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.mix_status_text = scrolledtext.ScrolledText(status_frame, height=10, wrap=tk.WORD)
+        self.mix_status_text.pack(fill=tk.BOTH, expand=True)
+
+        # 初始状态
+        self.update_mix_status("等待选择目录...")
 
 
 def main():
